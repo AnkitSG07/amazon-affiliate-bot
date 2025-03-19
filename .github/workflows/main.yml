@@ -1,3 +1,6 @@
+with open(".github/workflows/auto_update.yml", "w") as f:
+    os.makedirs(".github/workflows", exist_ok=True)
+    f.write('''
 name: Auto Update Amazon Bestsellers
 
 on:
@@ -32,5 +35,8 @@ jobs:
         git config --global user.name 'GitHub Actions'
         git config --global user.email 'actions@github.com'
         git add .
-        git commit -m 'Auto update bestsellers'
+        git commit -m 'Auto update bestsellers' || echo "No changes to commit"
         git push
+''')
+
+print("GitHub Actions workflow file generated correctly.")
