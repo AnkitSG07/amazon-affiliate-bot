@@ -9,7 +9,7 @@ AMAZON_BESTSELLER_URL = "https://www.amazon.in/gp/bestsellers"
 AFFILIATE_TAG = "ankit007"
 GITHUB_REPO_PATH = "./content/"  # Local path to save files
 
-# OpenAI API Key (Replace with your key)
+# OpenAI API Key from GitHub Secrets
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # Ensure content folder exists
@@ -68,3 +68,50 @@ def save_to_markdown(products):
             f.write(f"{review}\n\n---\n\n")
 
     print(f"Saved: {filename}")
+
+
+# Website Index Page Generator
+def generate_index_page(products):
+    index_html = """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Amazon Bestsellers</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 40px; background-color: #f4f4f4; }
+            .product { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; }
+            img { max-width: 200px; display: block; margin-bottom: 10px; }
+            a { text-decoration: none; color: #2d89ef; }
+        </style>
+    </head>
+    <body>
+        <h1>Amazon Bestsellers - Auto Updated</h1>
+    """
+
+    for product in products:
+        index_html += f"""
+        <div class='product'>
+            <h2>{product['title']}</h2>
+            <img src="{product['image']}" alt="{product['title']}">
+            <p><a href="{product['link']}" target="_blank">Buy Now on Amazon</a></p>
+        </div>
+        """
+
+    index_html += "</body></html>"
+
+    with open("index.html", "w", encoding="utf-8") as f:
+        f.write(index_html)
+
+    print("Homepage updated.")
+
+
+if __name__ == "__main__":
+    print("Scraping Amazon Bestsellers...")
+    products = scrape_bestsellers()
+    print(f"Found {len(products)} products.")
+    print("Generating content and homepage...")
+    save_to_markdown(products)
+    generate_index_page(products)
+    print("All done! Ready for deployment.")
