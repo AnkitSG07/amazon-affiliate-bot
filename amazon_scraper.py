@@ -23,8 +23,9 @@ def scrape_bestsellers():
 
     products = []
 
-    for item in soup.select(".zg-grid-general-faceout"):
-        title = item.select_one(".p13n-sc-truncate")
+    # UPDATED SELECTORS BASED ON CURRENT AMAZON STRUCTURE
+    for item in soup.select(".p13n-sc-uncoverable-faceout"):
+        title = item.select_one(".p13n-sc-truncate-desktop-type2")
         link = item.select_one("a.a-link-normal")
         image = item.select_one("img")
 
