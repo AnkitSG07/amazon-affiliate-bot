@@ -86,8 +86,10 @@ def save_to_json(products):
     print("Saved product data to JSON.")
 
 
-# Website Index Page Generator
+# Website Index Page Generator with Categories and Filters
 def generate_index_page(products):
+    categories = sorted(set([product['category'] for product in products]))
+
     index_html = """
     <!DOCTYPE html>
     <html lang="en">
@@ -97,18 +99,36 @@ def generate_index_page(products):
         <title>Amazon Bestsellers</title>
         <style>
             body { font-family: Arial, sans-serif; margin: 40px; background-color: #f4f4f4; }
+            .sidebar { float: left; width: 20%; }
+            .product-container { float: right; width: 75%; }
             .product { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; }
             img { max-width: 200px; display: block; margin-bottom: 10px; }
             a { text-decoration: none; color: #2d89ef; }
+            ul { list-style: none; padding: 0; }
+            li { margin-bottom: 10px; cursor: pointer; color: blue; }
         </style>
     </head>
     <body>
         <h1>Amazon Bestsellers - Auto Updated</h1>
+        <div class="sidebar">
+            <h3>Categories</h3>
+            <ul id="category-list">
     """
 
+    # Add categories to sidebar
+    for category in categories:
+        index_html += f"<li onclick=\"filterCategory('{category}')\">{category}</li>"
+
+    index_html += """
+            </ul>
+        </div>
+        <div class="product-container" id="product-container">
+    """
+
+    # Add all products
     for product in products:
         index_html += f"""
-        <div class='product'>
+        <div class='product' data-category='{product['category']}'>
             <h2>{product['title']}</h2>
             <img src="{product['image']}" alt="{product['title']}">
             <p>Price: {product['price']}</p>
@@ -117,12 +137,28 @@ def generate_index_page(products):
         </div>
         """
 
-    index_html += "</body></html>"
+    index_html += """
+        </div>
+        <script>
+            function filterCategory(category) {
+                const products = document.querySelectorAll('.product');
+                products.forEach(product => {
+                    if (product.getAttribute('data-category') === category || category === 'All') {
+                        product.style.display = 'block';
+                    } else {
+                        product.style.display = 'none';
+                    }
+                });
+            }
+        </script>
+    </body>
+    </html>
+    """
 
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(index_html)
 
-    print("Homepage updated.")
+    print("Homepage updated with categories filter.")
 
 
 if __name__ == "__main__":
