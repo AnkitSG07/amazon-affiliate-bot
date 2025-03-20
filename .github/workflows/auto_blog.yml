@@ -29,13 +29,11 @@ jobs:
         OPENAI_KEY_4: ${{ secrets.OPENAI_KEY_4 }}
         OPENAI_KEY_5: ${{ secrets.OPENAI_KEY_5 }}
       run: |
-        python amazon_scraper.py
+        python -c "from amazon_scraper import generate_blog; generate_blog()"
 
     - name: Commit Blog
       run: |
         git config --global user.name 'GitHub Actions'
         git config --global user.email 'actions@github.com'
         git add blogs/
-        git commit -m 'Auto generated blog' || echo "No new blog to commit"
-        git pull origin main --rebase
-        git push
+        git diff --cached --quiet || (git commit -m 'Auto generated blog' && git pull origin main --rebase && git push)
