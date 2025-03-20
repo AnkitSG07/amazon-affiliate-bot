@@ -222,7 +222,7 @@ def generate_index_page(products):
         <ul>
     """
 
-    # List all blog files
+    # List all blog files dynamically
     blog_files = sorted(os.listdir(BLOG_PATH), reverse=True)
     for blog in blog_files:
         index_html += f"<li><a href='./blogs/{blog}' target='_blank'>{blog.replace('-', ' ').replace('.md', '')}</a></li>"
@@ -234,8 +234,8 @@ def generate_index_page(products):
     </html>
     """
 
+    # Save homepage
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(index_html)
 
     print("Homepage updated with Blog section.")
-
