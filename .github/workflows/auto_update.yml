@@ -2,7 +2,7 @@ name: Auto Update Amazon Bestsellers
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # Runs daily
+    - cron: '0 1 * * *'  # Runs daily at 1:00 AM
   workflow_dispatch:
 
 jobs:
@@ -21,7 +21,7 @@ jobs:
       run: |
         pip install requests beautifulsoup4 openai
 
-    - name: Run Script
+    - name: Run Bestseller Script
       env:
         OPENAI_KEY_1: ${{ secrets.OPENAI_KEY_1 }}
         OPENAI_KEY_2: ${{ secrets.OPENAI_KEY_2 }}
