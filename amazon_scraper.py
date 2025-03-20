@@ -127,6 +127,13 @@ def generate_blog():
         print(f"Error generating blog: {e}")
 
 
+def generate_index_page(products):
+    # Basic placeholder homepage
+    with open("index.html", "w", encoding="utf-8") as f:
+        f.write("<html><body><h1>Amazon Bestsellers - Auto Updated</h1></body></html>")
+    print("Homepage updated.")
+
+
 if __name__ == "__main__":
     print("Scraping Amazon Bestsellers...")
     products = scrape_bestsellers()
@@ -135,4 +142,5 @@ if __name__ == "__main__":
     save_to_markdown(products)
     save_to_json(products)
     generate_blog()
-    print("All done! Ready for deployment.")
+    generate_index_page(products)
+    print("All done! Homepage updated and ready.")
