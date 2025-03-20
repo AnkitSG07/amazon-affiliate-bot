@@ -1,4 +1,4 @@
-#(Full updated code with Blog Section added visually to homepage and styled separately)
+#(Full updated code with Blog Section added visually to homepage and styled separately
 
 import requests
 from bs4 import BeautifulSoup
