@@ -127,83 +127,12 @@ def generate_blog():
         print(f"Error generating blog: {e}")
 
 
-def generate_index_page(products):
-    header_html = """
-    <!DOCTYPE html>
-    <html lang=\"en\">
-    <head>
-        <meta charset=\"UTF-8\">
-        <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
-        <title>Deals - Auto Updated</title>
-        <link href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css\" rel=\"stylesheet\">
-        <style>
-            body { background-color: #f8f9fa; font-family: Arial, sans-serif; }
-            .navbar { background: #fff; padding: 1rem; }
-            .navbar-brand { font-weight: bold; color: #ff6600; }
-            .search-bar { width: 400px; }
-            .category-section { margin: 2rem 0; }
-            .product-card { border: 1px solid #e0e0e0; border-radius: 10px; padding: 1rem; margin: 1rem; background: #fff; }
-            .product-card img { max-height: 150px; object-fit: contain; margin-bottom: 10px; }
-            .old-price { text-decoration: line-through; color: gray; }
-            .rating { color: gold; }
-        </style>
-    </head>
-    <body>
-        <nav class=\"navbar navbar-expand-lg\">
-            <div class=\"container-fluid\">
-                <a class=\"navbar-brand\" href=\"#\">Blurb</a>
-                <form class=\"d-flex\">
-                    <input class=\"form-control me-2 search-bar\" type=\"search\" placeholder=\"Search...\">
-                    <button class=\"btn btn-outline-success\" type=\"submit\">Search</button>
-                </form>
-            </div>
-        </nav>
-        <div class=\"container\">
-            <h2 class=\"my-4\">Amazon Top Deals</h2>
-            <div class=\"row\">
-    """
-
-    product_html = ""
-    for product in products:
-        product_html += f"""
-        <div class='col-md-3'>
-            <div class='product-card text-center'>
-                <img src='{product['image']}' class='img-fluid' alt='{product['title']}'>
-                <h5>{product['title']}</h5>
-                <p>Current Price: {product['price']}<br><span class='old-price'>Previous Price: {product['old_price']}</span></p>
-                <p><strong>Category:</strong> {product['category']}</p>
-                <p><span class='rating'>&#9733;&#9733;&#9733;&#9733;&#9734;</span></p>
-                <a href='{product['link']}' class='btn btn-primary' target='_blank'>Buy Now</a>
-            </div>
-        </div>
-        """
-
-    blogs_html = """
-            </div>
-            <h2 class=\"my-4\">Latest Blogs</h2>
-            <div class=\"row\">
-    """
-
-    blog_files = sorted(os.listdir(BLOGS_PATH), reverse=True)[:4]
-    for blog_file in blog_files:
-        blog_date = blog_file.replace("blog-", "").replace(".md", "")
-        blogs_html += f"""
-        <div class='col-md-6'>
-            <div class='product-card'>
-                <h5>Blog {blog_date}</h5>
-                <a href='{BLOGS_PATH}{blog_file}' class='btn btn-secondary mt-2' target='_blank'>Read Blog</a>
-            </div>
-        </div>
-        """
-
-    footer_html = """
-            </div>
-        </div>
-        <script src=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js\"></script>
-    </body>
-    </html>
-    """
-
-    full_html = header_html + product_html + blogs_html + footer_html
-
-    with open("index.html", "w", encoding="utf-8") as
+if __name__ == "__main__":
+    print("Scraping Amazon Bestsellers...")
+    products = scrape_bestsellers()
+    print(f"Found {len(products)} products.")
+    print("Generating content and homepage...")
+    save_to_markdown(products)
+    save_to_json(products)
+    generate_blog()
+    print("All done! Ready for deployment.")
