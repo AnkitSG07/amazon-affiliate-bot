@@ -2,7 +2,7 @@ name: Auto Update Amazon Bestsellers
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # Runs daily at midnight UTC
+    - cron: '0 0 * * *'  # Runs daily
   workflow_dispatch:
 
 jobs:
@@ -23,7 +23,11 @@ jobs:
 
     - name: Run Script
       env:
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        OPENAI_KEY_1: ${{ secrets.OPENAI_KEY_1 }}
+        OPENAI_KEY_2: ${{ secrets.OPENAI_KEY_2 }}
+        OPENAI_KEY_3: ${{ secrets.OPENAI_KEY_3 }}
+        OPENAI_KEY_4: ${{ secrets.OPENAI_KEY_4 }}
+        OPENAI_KEY_5: ${{ secrets.OPENAI_KEY_5 }}
       run: |
         python amazon_scraper.py
 
