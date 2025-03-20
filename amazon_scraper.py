@@ -2,12 +2,14 @@ import requests
 from bs4 import BeautifulSoup
 import openai
 import os
+import json
 from datetime import datetime
 
 # CONFIGURATION
 AMAZON_BESTSELLER_URL = "https://www.amazon.in/gp/bestsellers"
 AFFILIATE_TAG = "ankit007"
 GITHUB_REPO_PATH = "./content/"  # Local path to save files
+JSON_PATH = "products.json"  # JSON output file
 
 # OpenAI API Key from GitHub Secrets
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -28,12 +30,16 @@ def scrape_bestsellers():
         title = item.select_one(".p13n-sc-truncate-desktop-type2")
         link = item.select_one("a.a-link-normal")
         image = item.select_one("img")
+        price = item.select_one(".p13n-sc-price")
+        category = item.select_one(".a-badge-text")
 
         if title and link and image:
             product = {
                 'title': title.get_text(strip=True),
                 'link': "https://www.amazon.in" + link['href'] + f"&tag={AFFILIATE_TAG}",
-                'image': image['src']
+                'image': image['src'],
+                'price': price.get_text(strip=True) if price else "N/A",
+                'category': category.get_text(strip=True) if category else "General"
             }
             products.append(product)
     return products
@@ -65,10 +71,19 @@ def save_to_markdown(products):
             review = generate_review(product['title'])
             f.write(f"## {product['title']}\n")
             f.write(f"![Product Image]({product['image']})\n\n")
+            f.write(f"**Price:** {product['price']}\n\n")
+            f.write(f"**Category:** {product['category']}\n\n")
             f.write(f"**[Buy Now]({product['link']})**\n\n")
             f.write(f"{review}\n\n---\n\n")
 
     print(f"Saved: {filename}")
+
+
+# Save JSON data
+def save_to_json(products):
+    with open(JSON_PATH, "w", encoding="utf-8") as f:
+        json.dump(products, f, ensure_ascii=False, indent=4)
+    print("Saved product data to JSON.")
 
 
 # Website Index Page Generator
@@ -96,6 +111,8 @@ def generate_index_page(products):
         <div class='product'>
             <h2>{product['title']}</h2>
             <img src="{product['image']}" alt="{product['title']}">
+            <p>Price: {product['price']}</p>
+            <p>Category: {product['category']}</p>
             <p><a href="{product['link']}" target="_blank">Buy Now on Amazon</a></p>
         </div>
         """
@@ -114,5 +131,6 @@ if __name__ == "__main__":
     print(f"Found {len(products)} products.")
     print("Generating content and homepage...")
     save_to_markdown(products)
+    save_to_json(products)
     generate_index_page(products)
     print("All done! Ready for deployment.")
