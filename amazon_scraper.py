@@ -10,15 +10,20 @@ AMAZON_BESTSELLER_URL = "https://www.amazon.in/gp/bestsellers"
 AFFILIATE_TAG = "ankit007"
 GITHUB_REPO_PATH = "./content/"  # Local path to save files
 JSON_PATH = "products.json"  # JSON output file
-BLOGS_PATH = "./blogs/"  # Folder to save blogs
+BLOG_PATH = "./blogs/"  # Path to save blogs
 
-# OpenAI API Key from GitHub Secrets
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# OpenAI API Keys List (Set via GitHub Secrets)
+OPENAI_API_KEYS = [
+    os.getenv("OPENAI_KEY_1"),
+    os.getenv("OPENAI_KEY_2"),
+    os.getenv("OPENAI_KEY_3"),
+    os.getenv("OPENAI_KEY_4"),
+    os.getenv("OPENAI_KEY_5")
+]
 
 # Ensure folders exist
-for folder in [GITHUB_REPO_PATH, BLOGS_PATH]:
-    if not os.path.exists(folder):
-        os.makedirs(folder)
+os.makedirs(GITHUB_REPO_PATH, exist_ok=True)
+os.makedirs(BLOG_PATH, exist_ok=True)
 
 
 def scrape_bestsellers():
@@ -33,7 +38,6 @@ def scrape_bestsellers():
         image = item.select_one("img")
         price = item.select_one(".p13n-sc-price")
 
-        # Try to get category from parent section or fallback to 'Miscellaneous'
         category_tag = item.find_previous("h2")
         category_text = category_tag.get_text(strip=True) if category_tag else "Miscellaneous"
 
@@ -60,22 +64,6 @@ def scrape_bestsellers():
     return products
 
 
-def generate_review(product_title):
-    prompt = f"Write a short, engaging review for the product '{product_title}' in 100 words."
-
-    try:
-        response = openai.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=100
-        )
-        review = response.choices[0].message.content.strip()
-        return review
-    except Exception as e:
-        print(f"Error generating review: {e}")
-        return ""
-
-
 def save_to_markdown(products):
     today = datetime.now().strftime("%Y-%m-%d")
     filename = f"{GITHUB_REPO_PATH}bestsellers-{today}.md"
@@ -90,7 +78,8 @@ def save_to_markdown(products):
             f.write(f"**Previous Price:** {product['old_price']}\n\n")
             f.write(f"**Category:** {product['category']}\n\n")
             f.write(f"**[Buy Now]({product['link']})**\n\n")
-            f.write(f"{review}\n\n---\n\n")
+            f.write(f"{review}\n\n")
+            f.write(f"---\n\n")
 
     print(f"Saved: {filename}")
 
@@ -101,36 +90,132 @@ def save_to_json(products):
     print("Saved product data to JSON.")
 
 
+def generate_review(title):
+    prompt = f"Write a short, engaging review for the product: {title}"
+    for key in OPENAI_API_KEYS:
+        if key:
+            try:
+                openai.api_key = key
+                response = openai.Completion.create(
+                    model="text-davinci-003",
+                    prompt=prompt,
+                    max_tokens=100
+                )
+                return response.choices[0].text.strip()
+            except Exception as e:
+                print(f"Key failed, trying next... ({e})")
+    print("All keys exhausted or invalid.")
+    return ""
+
+
 def generate_blog():
     today = datetime.now().strftime("%Y-%m-%d")
-    blog_title = f"Top Shopping Tips {today}"
-    prompt = f"Write a 300-word engaging blog post about online shopping tips for {today}."
+    prompt = f"Write a 300-word blog post about trending products on Amazon India for {today}."
 
-    try:
-        response = openai.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=500
-        )
-        blog_content = response.choices[0].message.content.strip()
-
-        image_url = f"https://source.unsplash.com/600x400/?shopping,technology"
-
-        filename = f"{BLOGS_PATH}blog-{today}.md"
-        with open(filename, "w", encoding="utf-8") as f:
-            f.write(f"# {blog_title}\n\n")
-            f.write(f"![Blog Image]({image_url})\n\n")
-            f.write(blog_content)
-
-        print(f"Blog generated: {filename}")
-    except Exception as e:
-        print(f"Error generating blog: {e}")
+    for key in OPENAI_API_KEYS:
+        if key:
+            try:
+                openai.api_key = key
+                response = openai.Completion.create(
+                    model="text-davinci-003",
+                    prompt=prompt,
+                    max_tokens=500
+                )
+                blog_content = response.choices[0].text.strip()
+                filename = f"{BLOG_PATH}blog-{today}.md"
+                with open(filename, "w", encoding="utf-8") as f:
+                    f.write(f"# Blog - {today}\n\n{blog_content}\n")
+                print(f"Blog saved: {filename}")
+                return
+            except Exception as e:
+                print(f"Blog key failed, trying next... ({e})")
+    print("All keys exhausted or invalid for blog.")
 
 
 def generate_index_page(products):
-    # Basic placeholder homepage
+    categories = sorted(set([p['category'] for p in products]))
+
+    index_html = """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Amazon Bestsellers</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; }
+            .filter { margin-bottom: 20px; }
+            .sort { margin-bottom: 20px; }
+            .product { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; display: inline-block; width: 300px; vertical-align: top; margin-right: 20px; }
+            img { max-width: 100%; height: auto; display: block; margin-bottom: 10px; }
+            a { text-decoration: none; color: #2d89ef; }
+        </style>
+        <script>
+            function filterCategory(category) {
+                const products = document.querySelectorAll('.product');
+                products.forEach(p => {
+                    if(category === 'All' || p.dataset.category === category){
+                        p.style.display = 'inline-block';
+                    } else {
+                        p.style.display = 'none';
+                    }
+                });
+            }
+            function sortProducts(option) {
+                let container = document.getElementById('product-container');
+                let items = Array.from(container.getElementsByClassName('product'));
+                if(option === 'low'){ items.sort((a,b)=>parseFloat(a.dataset.price)-parseFloat(b.dataset.price)); }
+                if(option === 'high'){ items.sort((a,b)=>parseFloat(b.dataset.price)-parseFloat(a.dataset.price)); }
+                container.innerHTML = '';
+                items.forEach(item => container.appendChild(item));
+            }
+        </script>
+    </head>
+    <body>
+        <h1>Amazon Bestsellers - Auto Updated</h1>
+        <div class="filter">
+            <label for="categories">Filter by Category: </label>
+            <select id="categories" onchange="filterCategory(this.value)">
+                <option value="All">All</option>
+    """
+    for category in categories:
+        index_html += f"<option value='{category}'>{category}</option>"
+
+    index_html += """
+            </select>
+        </div>
+        <div class="sort">
+            <label for="sort">Sort by Price: </label>
+            <select id="sort" onchange="sortProducts(this.value)">
+                <option value="none">None</option>
+                <option value="low">Lowest First</option>
+                <option value="high">Highest First</option>
+            </select>
+        </div>
+        <div id="product-container">
+    """
+
+    for product in products:
+        price_numeric = product['price'].replace('₹','').replace(',','').strip()
+        try:
+            price_float = float(price_numeric)
+        except:
+            price_float = 0
+        index_html += f"""
+        <div class='product' data-category='{product['category']}' data-price='{price_float}'>
+            <h2>{product['title']}</h2>
+            <img src="{product['image']}" alt="{product['title']}">
+            <p><strong>Price:</strong> {product['price']} <span style='text-decoration: line-through; color: grey;'>{product['old_price']}</span></p>
+            <p><strong>Category:</strong> {product['category']}</p>
+            <p><a href="{product['link']}" target="_blank">Buy Now on Amazon</a></p>
+        </div>
+        """
+
+    index_html += "</div></body></html>"
+
     with open("index.html", "w", encoding="utf-8") as f:
-        f.write("<html><body><h1>Amazon Bestsellers - Auto Updated</h1></body></html>")
+        f.write(index_html)
+
     print("Homepage updated.")
 
 
@@ -141,6 +226,6 @@ if __name__ == "__main__":
     print("Generating content and homepage...")
     save_to_markdown(products)
     save_to_json(products)
-    generate_blog()
     generate_index_page(products)
-    print("All done! Homepage updated and ready.")
+    generate_blog()
+    print("All done! Homepage and blog updated.")
