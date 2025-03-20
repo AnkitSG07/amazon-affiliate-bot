@@ -1,3 +1,5 @@
+(Full updated code with Blog Section added visually to homepage and styled separately)
+
 import requests
 from bs4 import BeautifulSoup
 import openai
@@ -137,18 +139,18 @@ def generate_index_page(products):
 
     index_html = """
     <!DOCTYPE html>
-    <html lang="en">
+    <html lang=\"en\">
     <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta charset=\"UTF-8\">
+        <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
         <title>Amazon Bestsellers</title>
         <style>
             body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; }
-            .filter { margin-bottom: 20px; }
-            .sort { margin-bottom: 20px; }
+            .filter, .sort { margin-bottom: 20px; }
             .product { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; display: inline-block; width: 300px; vertical-align: top; margin-right: 20px; }
             img { max-width: 100%; height: auto; display: block; margin-bottom: 10px; }
             a { text-decoration: none; color: #2d89ef; }
+            .blog-section { margin-top: 50px; padding: 20px; background: white; border-radius: 8px; }
         </style>
         <script>
             function filterCategory(category) {
@@ -173,10 +175,10 @@ def generate_index_page(products):
     </head>
     <body>
         <h1>Amazon Bestsellers - Auto Updated</h1>
-        <div class="filter">
-            <label for="categories">Filter by Category: </label>
-            <select id="categories" onchange="filterCategory(this.value)">
-                <option value="All">All</option>
+        <div class=\"filter\">
+            <label for=\"categories\">Filter by Category: </label>
+            <select id=\"categories\" onchange=\"filterCategory(this.value)\">
+                <option value=\"All\">All</option>
     """
     for category in categories:
         index_html += f"<option value='{category}'>{category}</option>"
@@ -184,15 +186,15 @@ def generate_index_page(products):
     index_html += """
             </select>
         </div>
-        <div class="sort">
-            <label for="sort">Sort by Price: </label>
-            <select id="sort" onchange="sortProducts(this.value)">
-                <option value="none">None</option>
-                <option value="low">Lowest First</option>
-                <option value="high">Highest First</option>
+        <div class=\"sort\">
+            <label for=\"sort\">Sort by Price: </label>
+            <select id=\"sort\" onchange=\"sortProducts(this.value)\">
+                <option value=\"none\">None</option>
+                <option value=\"low\">Lowest First</option>
+                <option value=\"high\">Highest First</option>
             </select>
         </div>
-        <div id="product-container">
+        <div id=\"product-container\">
     """
 
     for product in products:
@@ -211,21 +213,29 @@ def generate_index_page(products):
         </div>
         """
 
-    index_html += "</div></body></html>"
+    index_html += "</div>"
+
+    # Blog Section
+    index_html += """
+    <div class="blog-section">
+        <h2>Latest Blogs</h2>
+        <ul>
+    """
+
+    # List all blog files
+    blog_files = sorted(os.listdir(BLOG_PATH), reverse=True)
+    for blog in blog_files:
+        index_html += f"<li><a href='./blogs/{blog}' target='_blank'>{blog.replace('-', ' ').replace('.md', '')}</a></li>"
+
+    index_html += """
+        </ul>
+    </div>
+    </body>
+    </html>
+    """
 
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(index_html)
 
-    print("Homepage updated.")
+    print("Homepage updated with Blog section.")
 
-
-if __name__ == "__main__":
-    print("Scraping Amazon Bestsellers...")
-    products = scrape_bestsellers()
-    print(f"Found {len(products)} products.")
-    print("Generating content and homepage...")
-    save_to_markdown(products)
-    save_to_json(products)
-    generate_index_page(products)
-    generate_blog()
-    print("All done! Homepage and blog updated.")
