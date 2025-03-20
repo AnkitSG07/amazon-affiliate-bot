@@ -25,7 +25,6 @@ def scrape_bestsellers():
 
     products = []
 
-    # UPDATED SELECTORS BASED ON CURRENT AMAZON STRUCTURE
     for item in soup.select(".p13n-sc-uncoverable-faceout"):
         title = item.select_one(".p13n-sc-truncate-desktop-type2")
         link = item.select_one("a.a-link-normal")
@@ -79,14 +78,12 @@ def save_to_markdown(products):
     print(f"Saved: {filename}")
 
 
-# Save JSON data
 def save_to_json(products):
     with open(JSON_PATH, "w", encoding="utf-8") as f:
         json.dump(products, f, ensure_ascii=False, indent=4)
     print("Saved product data to JSON.")
 
 
-# Website Index Page Generator with Categories and Filters
 def generate_index_page(products):
     categories = sorted(set([product['category'] for product in products]))
 
@@ -97,51 +94,58 @@ def generate_index_page(products):
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Amazon Bestsellers</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
         <style>
-            body { font-family: Arial, sans-serif; margin: 40px; background-color: #f4f4f4; }
-            .sidebar { float: left; width: 20%; }
-            .product-container { float: right; width: 75%; }
-            .product { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; }
-            img { max-width: 200px; display: block; margin-bottom: 10px; }
-            a { text-decoration: none; color: #2d89ef; }
-            ul { list-style: none; padding: 0; }
-            li { margin-bottom: 10px; cursor: pointer; color: blue; }
+            body { background-color: #f8f9fa; font-family: Arial, sans-serif; }
+            .sidebar { float: left; width: 20%; padding: 20px; background: #fff; border-radius: 10px; margin-right: 5%; }
+            .product-container { float: left; width: 75%; }
+            .product-card { border: 1px solid #e0e0e0; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 30px; }
+            .product-card img { border-radius: 10px 10px 0 0; max-height: 200px; object-fit: contain; }
+            .discount-badge { background: red; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; }
+            .old-price { text-decoration: line-through; color: gray; }
+            .buy-btn { background: #28a745; color: white; }
         </style>
     </head>
     <body>
-        <h1>Amazon Bestsellers - Auto Updated</h1>
-        <div class="sidebar">
-            <h3>Categories</h3>
-            <ul id="category-list">
+        <div class="container py-4">
+            <h1 class="mb-4 text-center">Amazon Bestsellers</h1>
+            <div class="sidebar">
+                <h4>Categories</h4>
+                <ul class="list-unstyled">
+                    <li><a href="#" onclick="filterCategory('All')">All</a></li>
     """
 
-    # Add categories to sidebar
     for category in categories:
-        index_html += f"<li onclick=\"filterCategory('{category}')\">{category}</li>"
+        index_html += f"<li><a href='#' onclick=\"filterCategory('{category}')\">{category}</a></li>"
 
     index_html += """
-            </ul>
-        </div>
-        <div class="product-container" id="product-container">
+                </ul>
+            </div>
+            <div class="product-container row" id="product-container">
     """
 
-    # Add all products
     for product in products:
         index_html += f"""
-        <div class='product' data-category='{product['category']}'>
-            <h2>{product['title']}</h2>
-            <img src="{product['image']}" alt="{product['title']}">
-            <p>Price: {product['price']}</p>
-            <p>Category: {product['category']}</p>
-            <p><a href="{product['link']}" target="_blank">Buy Now on Amazon</a></p>
+        <div class='col-md-4 product-item' data-category='{product['category']}'>
+            <div class='product-card'>
+                <img src="{product['image']}" class="card-img-top" alt="{product['title']}">
+                <div class="p-3">
+                    <h5>{product['title']}</h5>
+                    <p><span class="fw-bold">Price:</span> {product['price']} <span class="old-price">₹{int(product['price'].replace('₹','').replace(',',''))*2}</span> <span class="discount-badge">50% OFF</span></p>
+                    <p><strong>Category:</strong> {product['category']}</p>
+                    <a href="{product['link']}" class="btn buy-btn" target="_blank">Buy Now <i class="fas fa-arrow-right"></i></a>
+                </div>
+            </div>
         </div>
         """
 
     index_html += """
+            </div>
         </div>
         <script>
             function filterCategory(category) {
-                const products = document.querySelectorAll('.product');
+                const products = document.querySelectorAll('.product-item');
                 products.forEach(product => {
                     if (product.getAttribute('data-category') === category || category === 'All') {
                         product.style.display = 'block';
@@ -151,6 +155,7 @@ def generate_index_page(products):
                 });
             }
         </script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     </body>
     </html>
     """
@@ -158,7 +163,7 @@ def generate_index_page(products):
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(index_html)
 
-    print("Homepage updated with categories filter.")
+    print("Homepage updated to Blurb-style design.")
 
 
 if __name__ == "__main__":
