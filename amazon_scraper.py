@@ -48,12 +48,12 @@ def generate_review(product_title):
     prompt = f"Write a short, engaging review for the product '{product_title}' in 100 words."
 
     try:
-        response = openai.Completion.create(
-            engine="text-davinci-003",
-            prompt=prompt,
+        response = openai.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
             max_tokens=100
         )
-        review = response.choices[0].text.strip()
+        review = response.choices[0].message.content.strip()
         return review
     except Exception as e:
         print(f"Error generating review: {e}")
@@ -126,13 +126,19 @@ def generate_index_page(products):
     """
 
     for product in products:
+        price_text = product['price'].replace('₹','').replace(',','').strip()
+        if price_text.isdigit():
+            old_price = f"₹{int(price_text)*2}"
+        else:
+            old_price = "N/A"
+
         index_html += f"""
         <div class='col-md-4 product-item' data-category='{product['category']}'>
             <div class='product-card'>
                 <img src="{product['image']}" class="card-img-top" alt="{product['title']}">
                 <div class="p-3">
                     <h5>{product['title']}</h5>
-                    <p><span class="fw-bold">Price:</span> {product['price']} <span class="old-price">₹{int(product['price'].replace('₹','').replace(',',''))*2}</span> <span class="discount-badge">50% OFF</span></p>
+                    <p><span class="fw-bold">Price:</span> {product['price']} <span class="old-price">{old_price}</span> <span class="discount-badge">50% OFF</span></p>
                     <p><strong>Category:</strong> {product['category']}</p>
                     <a href="{product['link']}" class="btn buy-btn" target="_blank">Buy Now <i class="fas fa-arrow-right"></i></a>
                 </div>
