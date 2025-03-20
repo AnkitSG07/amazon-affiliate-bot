@@ -30,7 +30,10 @@ def scrape_bestsellers():
         link = item.select_one("a.a-link-normal")
         image = item.select_one("img")
         price = item.select_one(".p13n-sc-price")
-        category = item.select_one(".a-badge-text")
+
+        # Try to get category from parent section or fallback to 'Miscellaneous'
+        category_tag = item.find_previous("h2")
+        category_text = category_tag.get_text(strip=True) if category_tag else "Miscellaneous"
 
         if title and link and image:
             product = {
@@ -38,7 +41,7 @@ def scrape_bestsellers():
                 'link': "https://www.amazon.in" + link['href'] + f"&tag={AFFILIATE_TAG}",
                 'image': image['src'],
                 'price': price.get_text(strip=True) if price else "N/A",
-                'category': category.get_text(strip=True) if category else "General"
+                'category': category_text
             }
             products.append(product)
     return products
@@ -85,91 +88,68 @@ def save_to_json(products):
 
 
 def generate_index_page(products):
-    categories = sorted(set([product['category'] for product in products]))
-
-    index_html = """
+    # Blurb-style header and layout
+    header_html = """
     <!DOCTYPE html>
-    <html lang="en">
+    <html lang=\"en\">
     <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta charset=\"UTF-8\">
+        <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
         <title>Amazon Bestsellers</title>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css\" rel=\"stylesheet\">
         <style>
             body { background-color: #f8f9fa; font-family: Arial, sans-serif; }
-            .sidebar { float: left; width: 20%; padding: 20px; background: #fff; border-radius: 10px; margin-right: 5%; }
-            .product-container { float: left; width: 75%; }
-            .product-card { border: 1px solid #e0e0e0; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 30px; }
-            .product-card img { border-radius: 10px 10px 0 0; max-height: 200px; object-fit: contain; }
-            .discount-badge { background: red; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; }
-            .old-price { text-decoration: line-through; color: gray; }
-            .buy-btn { background: #28a745; color: white; }
+            .navbar { background: #fff; padding: 1rem; }
+            .navbar-brand { font-weight: bold; color: #ff6600; }
+            .search-bar { width: 400px; }
+            .category-section { margin: 2rem 0; }
+            .product-card { border: 1px solid #e0e0e0; border-radius: 10px; padding: 1rem; margin: 1rem; background: #fff; }
+            .product-card img { max-height: 150px; object-fit: contain; margin-bottom: 10px; }
         </style>
     </head>
     <body>
-        <div class="container py-4">
-            <h1 class="mb-4 text-center">Amazon Bestsellers</h1>
-            <div class="sidebar">
-                <h4>Categories</h4>
-                <ul class="list-unstyled">
-                    <li><a href="#" onclick="filterCategory('All')">All</a></li>
-    """
-
-    for category in categories:
-        index_html += f"<li><a href='#' onclick=\"filterCategory('{category}')\">{category}</a></li>"
-
-    index_html += """
-                </ul>
+        <nav class=\"navbar navbar-expand-lg\">
+            <div class=\"container-fluid\">
+                <a class=\"navbar-brand\" href=\"#\">Blurb</a>
+                <form class=\"d-flex\">
+                    <input class=\"form-control me-2 search-bar\" type=\"search\" placeholder=\"Search...\">
+                    <button class=\"btn btn-outline-success\" type=\"submit\">Search</button>
+                </form>
             </div>
-            <div class="product-container row" id="product-container">
+        </nav>
+        <div class=\"container\">
+            <h2 class=\"my-4\">Amazon Top Deals</h2>
+            <div class=\"row\">
     """
 
+    product_html = ""
     for product in products:
-        price_text = product['price'].replace('₹','').replace(',','').strip()
-        if price_text.isdigit():
-            old_price = f"₹{int(price_text)*2}"
-        else:
-            old_price = "N/A"
-
-        index_html += f"""
-        <div class='col-md-4 product-item' data-category='{product['category']}'>
-            <div class='product-card'>
-                <img src="{product['image']}" class="card-img-top" alt="{product['title']}">
-                <div class="p-3">
-                    <h5>{product['title']}</h5>
-                    <p><span class="fw-bold">Price:</span> {product['price']} <span class="old-price">{old_price}</span> <span class="discount-badge">50% OFF</span></p>
-                    <p><strong>Category:</strong> {product['category']}</p>
-                    <a href="{product['link']}" class="btn buy-btn" target="_blank">Buy Now <i class="fas fa-arrow-right"></i></a>
-                </div>
+        product_html += f"""
+        <div class='col-md-3'>
+            <div class='product-card text-center'>
+                <img src='{product['image']}' class='img-fluid' alt='{product['title']}'>
+                <h5>{product['title']}</h5>
+                <p>{product['price']}</p>
+                <p><strong>Category:</strong> {product['category']}</p>
+                <a href='{product['link']}' class='btn btn-primary' target='_blank'>Buy Now</a>
             </div>
         </div>
         """
 
-    index_html += """
+    footer_html = """
             </div>
         </div>
-        <script>
-            function filterCategory(category) {
-                const products = document.querySelectorAll('.product-item');
-                products.forEach(product => {
-                    if (product.getAttribute('data-category') === category || category === 'All') {
-                        product.style.display = 'block';
-                    } else {
-                        product.style.display = 'none';
-                    }
-                });
-            }
-        </script>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script src=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js\"></script>
     </body>
     </html>
     """
 
-    with open("index.html", "w", encoding="utf-8") as f:
-        f.write(index_html)
+    full_html = header_html + product_html + footer_html
 
-    print("Homepage updated to Blurb-style design.")
+    with open("index.html", "w", encoding="utf-8") as f:
+        f.write(full_html)
+
+    print("Homepage generated in Blurb style.")
 
 
 if __name__ == "__main__":
