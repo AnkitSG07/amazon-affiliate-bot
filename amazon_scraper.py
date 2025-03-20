@@ -1,5 +1,3 @@
-#(Full updated code with Blog Section added visually to homepage and styled separately
-
 import requests
 from bs4 import BeautifulSoup
 import openai
@@ -10,11 +8,11 @@ from datetime import datetime
 # CONFIGURATION
 AMAZON_BESTSELLER_URL = "https://www.amazon.in/gp/bestsellers"
 AFFILIATE_TAG = "ankit007"
-GITHUB_REPO_PATH = "./content/"  # Local path to save files
-JSON_PATH = "products.json"  # JSON output file
-BLOG_PATH = "./blogs/"  # Path to save blogs
+GITHUB_REPO_PATH = "./content/"
+JSON_PATH = "products.json"
+BLOG_PATH = "./blogs/"
 
-# OpenAI API Keys List (Set via GitHub Secrets)
+# OpenAI API Keys List
 OPENAI_API_KEYS = [
     os.getenv("OPENAI_KEY_1"),
     os.getenv("OPENAI_KEY_2"),
@@ -48,7 +46,7 @@ def scrape_bestsellers():
         if price and price_text != "N/A":
             try:
                 price_number = int(price_text.replace('₹', '').replace(',', '').strip())
-                old_price = f"₹{price_number * 2}"  # Just doubling for demonstration
+                old_price = f"₹{price_number * 2}"
             except ValueError:
                 price_number = "N/A"
                 old_price = "N/A"
@@ -216,13 +214,19 @@ def generate_index_page(products):
     index_html += "</div>"
 
     # Blog Section
+    # Check if blogs folder is empty
+    if not os.listdir(BLOG_PATH):
+        sample_blog = f"{BLOG_PATH}sample-blog.md"
+        with open(sample_blog, "w", encoding="utf-8") as f:
+            f.write("# Sample Blog\n\nThis is a test blog post to check if the Blog Section appears correctly.")
+        print(f"Sample blog created: {sample_blog}")
+
     index_html += """
     <div class="blog-section">
         <h2>Latest Blogs</h2>
         <ul>
     """
 
-    # List all blog files dynamically
     blog_files = sorted(os.listdir(BLOG_PATH), reverse=True)
     for blog in blog_files:
         index_html += f"<li><a href='./blogs/{blog}' target='_blank'>{blog.replace('-', ' ').replace('.md', '')}</a></li>"
@@ -234,8 +238,20 @@ def generate_index_page(products):
     </html>
     """
 
-    # Save homepage
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(index_html)
 
     print("Homepage updated with Blog section.")
+
+
+# Main Run
+if __name__ == "__main__":
+    print("Scraping Amazon Bestsellers...")
+    products = scrape_bestsellers()
+    print(f"Found {len(products)} products.")
+    print("Generating content and homepage...")
+    save_to_markdown(products)
+    save_to_json(products)
+    generate_index_page(products)
+    generate_blog()
+    print("All done! Ready for deployment.")
