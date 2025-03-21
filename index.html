@@ -1,59 +1,63 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Amazon Best Deals - FoodMart Style</title>
-  <link rel="stylesheet" href="css/style.css" />
-  <link rel="stylesheet" href="css/bootstrap.min.css" />
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="css/bootstrap.min.css">
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
 <!-- Header -->
-<header>
-  <nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <div class="container">
+<header class="bg-light py-3">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-center">
       <a class="navbar-brand" href="#">Amazon Deals</a>
       <form class="d-flex">
         <input class="form-control me-2" type="search" placeholder="Search products" id="searchBar">
       </form>
     </div>
-  </nav>
+  </div>
 </header>
 
 <!-- Categories -->
-<div class="container mt-4">
+<section class="container mt-4">
   <h2 class="mb-3">Categories</h2>
   <div id="categoryButtons" class="d-flex flex-wrap gap-2">
-    <!-- Dynamic categories -->
+    <!-- Dynamic categories will be injected here -->
   </div>
-</div>
+</section>
 
 <!-- Products -->
-<div class="container mt-4">
+<section class="container mt-4">
   <h2 class="mb-3">Best Deals</h2>
   <div class="row" id="productContainer">
-    <!-- Dynamic products will load here -->
+    <!-- Dynamic products will be injected here -->
   </div>
-</div>
+</section>
 
 <!-- Blog Section -->
-<div class="container mt-5">
+<section class="container mt-5">
   <h2>Latest Blogs</h2>
   <ul id="blogList">
-    <!-- Dynamic blog list -->
+    <!-- Dynamic blog list will be injected here -->
   </ul>
-</div>
+</section>
 
 <!-- Footer -->
 <footer class="bg-light text-center p-3 mt-5">
   © 2025 Amazon Affiliate | Powered by FoodMart Theme
 </footer>
 
+<!-- Bootstrap Bundle with Popper -->
 <script src="js/bootstrap.bundle.min.js"></script>
+<!-- Products Data -->
 <script src="products.js"></script>
-<script src="main.js"></script>
+<!-- Main Script -->
+<script src="js/main.js"></script>
 
 </body>
 </html>
