@@ -1,53 +1,57 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Amazon Best Deals</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <style>
-    body { background-color: #f9f9f9; font-family: Arial, sans-serif; }
-    .navbar { background-color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    .category-tabs { margin: 20px 0; }
-    .product-card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    .product-card img { max-width: 100%; height: auto; margin-bottom: 10px; }
-    .price { font-weight: bold; color: green; }
-    .old-price { text-decoration: line-through; color: grey; margin-left: 10px; }
-    .star { color: gold; }
-    .btn-buy { background-color: #ff9900; color: white; }
-  </style>
+  <title>Amazon Best Deals - FoodMart Style</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/bootstrap.min.css" />
 </head>
 <body>
 
-<!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-light">
-  <div class="container">
-    <a class="navbar-brand" href="#">Amazon Best Deals</a>
-    <form class="d-flex w-50">
-      <input class="form-control me-2" type="search" id="searchBar" placeholder="Search products" aria-label="Search">
-    </form>
-  </div>
-</nav>
+<!-- Header -->
+<header>
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container">
+      <a class="navbar-brand" href="#">Amazon Deals</a>
+      <form class="d-flex">
+        <input class="form-control me-2" type="search" placeholder="Search products" id="searchBar">
+      </form>
+    </div>
+  </nav>
+</header>
 
-<!-- Category Tabs -->
-<div class="container category-tabs d-flex flex-wrap gap-2 justify-content-center">
-  <button class="btn btn-outline-primary" onclick="filterCategory('All')">All</button>
-  <div id="categoryButtons"></div>
+<!-- Categories -->
+<div class="container mt-4">
+  <h2 class="mb-3">Categories</h2>
+  <div id="categoryButtons" class="d-flex flex-wrap gap-2">
+    <!-- Dynamic categories -->
+  </div>
 </div>
 
-<!-- Product Grid -->
-<div class="container">
+<!-- Products -->
+<div class="container mt-4">
+  <h2 class="mb-3">Best Deals</h2>
   <div class="row" id="productContainer">
+    <!-- Dynamic products will load here -->
   </div>
 </div>
 
 <!-- Blog Section -->
 <div class="container mt-5">
   <h2>Latest Blogs</h2>
-  <ul id="blogList"></ul>
+  <ul id="blogList">
+    <!-- Dynamic blog list -->
+  </ul>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Footer -->
+<footer class="bg-light text-center p-3 mt-5">
+  © 2025 Amazon Affiliate | Powered by FoodMart Theme
+</footer>
+
+<script src="js/bootstrap.bundle.min.js"></script>
 <script src="products.js"></script>
 <script src="main.js"></script>
 

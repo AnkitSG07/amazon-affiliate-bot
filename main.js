@@ -1,7 +1,8 @@
+
 const categories = [...new Set(products.map(p => p.category))];
 
 window.onload = function() {
-  // Add category buttons
+  // Add category buttons dynamically
   const nav = document.getElementById('categoryButtons');
   categories.forEach(cat => {
     let btn = document.createElement('button');
@@ -39,16 +40,18 @@ function loadProducts(category, searchTerm = "") {
     .filter(p => (category === 'All' || p.category === category) && p.title.toLowerCase().includes(searchTerm))
     .forEach(prod => {
       container.innerHTML += `
-      <div class="col-md-3">
-        <div class="product-card">
-          <img src="${prod.image}" alt="${prod.title}">
-          <h5>${prod.title}</h5>
-          <p><span class="price">${prod.price}</span> <span class="old-price">${prod.old_price}</span></p>
-          <p>Category: ${prod.category}</p>
-          <div class="mb-2">
-            <span class="star">&#9733;&#9733;&#9733;&#9733;&#9734;</span>
+      <div class="col-md-3 mb-4">
+        <div class="card h-100 shadow-sm">
+          <img src="${prod.image}" class="card-img-top" alt="${prod.title}">
+          <div class="card-body">
+            <h5 class="card-title">${prod.title}</h5>
+            <p class="card-text">
+              <strong>Price:</strong> ${prod.price} 
+              <span style='text-decoration: line-through; color: grey;'>${prod.old_price}</span>
+            </p>
+            <p><strong>Category:</strong> ${prod.category}</p>
+            <a href="${prod.link}" target="_blank" class="btn btn-warning w-100">Buy Now</a>
           </div>
-          <a href="${prod.link}" target="_blank" class="btn btn-sm btn-buy">Buy Now</a>
         </div>
       </div>`;
     });
