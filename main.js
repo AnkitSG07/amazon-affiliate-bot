@@ -6,7 +6,27 @@ window.onload = function() {
   const nav = document.getElementById('categoryButtons');
   categories.forEach(cat => {
     let btn = document.createElement('button');
-    btn.className = "btn btn-outline-primary";
+    btn.className = "btn btn-outline-prconst container = document.getElementById('product-container');
+
+products.forEach(product => {
+  const col = document.createElement('div');
+  col.className = "col-md-4";
+
+  col.innerHTML = `
+    <div class="product-card text-center">
+      <img src="${product.image}" alt="${product.title}" />
+      <div class="product-title">${product.title}</div>
+      <div>
+        <span class="product-price">${product.price}</span>
+        <span class="old-price">${product.old_price}</span>
+      </div>
+      <a href="${product.link}" class="btn btn-primary mt-2" target="_blank">Buy Now</a>
+    </div>
+  `;
+
+  container.appendChild(col);
+});
+imary";
     btn.innerText = cat;
     btn.onclick = () => filterCategory(cat);
     nav.appendChild(btn);
