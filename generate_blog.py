@@ -1,4 +1,3 @@
-
 import openai
 import os
 import json
@@ -34,9 +33,21 @@ def generate_blog():
                     max_tokens=500
                 )
                 blog_content = response.choices[0].text.strip()
-                filename = f"{BLOG_FOLDER}/blog-{today}.md"
+                filename = f"{BLOG_FOLDER}/blog-{today}.html"
                 with open(filename, "w", encoding="utf-8") as f:
-                    f.write(f"# Blog - {today}\n\n{blog_content}\n")
+                    f.write(f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Amazon Trends {today}</title>
+</head>
+<body>
+  <h1>Amazon Trends - {today}</h1>
+  <p>{blog_content}</p>
+</body>
+</html>
+""")
                 print(f"Blog saved: {filename}")
                 return {"title": f"Amazon Trends {today}", "link": f"./{filename}"}
             except Exception as e:
