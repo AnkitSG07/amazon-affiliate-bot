@@ -1,14 +1,14 @@
 [
-    {
-        "title": "Top Gadgets in Electronics Today",
-        "link": "./blogs/blog-2025-03-20.md"
-    },
-    {
-        "title": "Best Home Appliances You Should Check",
-        "link": "./blogs/blog-2025-03-19.md"
-    },
-    {
-        "title": "Amazon Bestseller Highlights of the Month",
-        "link": "./blogs/blog-2025-03-18.md"
-    }
+  {
+    "title": "Top Gadgets in Electronics Today",
+    "link": "./blogs/blog-2025-03-20.html"
+  },
+  {
+    "title": "Best Home Appliances You Should Check",
+    "link": "./blogs/blog-2025-03-19.html"
+  },
+  {
+    "title": "Amazon Bestseller Highlights of the Month",
+    "link": "./blogs/blog-2025-03-18.html"
+  }
 ]
