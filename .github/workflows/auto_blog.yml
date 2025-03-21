@@ -1,12 +1,12 @@
-name: Auto Generate Blog Daily
+name: Auto Generate Blog
 
 on:
   schedule:
-    - cron: '0 2 * * *'  # Runs daily at 2:00 AM
+    - cron: '30 0 * * *'  # Runs daily at 00:30
   workflow_dispatch:
 
 jobs:
-  update:
+  generate_blog:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Repository
@@ -19,21 +19,18 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        pip install requests beautifulsoup4 openai
+        pip install requests openai
 
-    - name: Run Blog Generator
+    - name: Generate Blog
       env:
-        OPENAI_KEY_1: ${{ secrets.OPENAI_KEY_1 }}
-        OPENAI_KEY_2: ${{ secrets.OPENAI_KEY_2 }}
-        OPENAI_KEY_3: ${{ secrets.OPENAI_KEY_3 }}
-        OPENAI_KEY_4: ${{ secrets.OPENAI_KEY_4 }}
-        OPENAI_KEY_5: ${{ secrets.OPENAI_KEY_5 }}
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       run: |
-        python -c "from amazon_scraper import generate_blog; generate_blog()"
+        python generate_blog.py
 
-    - name: Commit Blog
+    - name: Commit Changes
       run: |
         git config --global user.name 'GitHub Actions'
         git config --global user.email 'actions@github.com'
-        git add blogs/
-        git diff --cached --quiet || (git commit -m 'Auto generated blog' && git pull origin main --rebase && git push)
+        git add blogs/ blogs.json
+        git commit -m 'Auto generate blog'
+        git push
