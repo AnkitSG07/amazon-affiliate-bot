@@ -1,63 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Amazon Best Deals - FoodMart Style</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Amazon Deals</title>
+
   <!-- Bootstrap CSS -->
-  <link rel="stylesheet" href="css/bootstrap.min.css">
-  <!-- Custom CSS -->
-  <link rel="stylesheet" href="css/style.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  
+  <style>
+    body { padding: 30px; background-color: #f9f9f9; }
+    .product-card { border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin: 10px; background: #fff; }
+    .product-card img { max-width: 100%; height: auto; }
+    .product-title { font-size: 16px; font-weight: bold; margin-top: 10px; }
+    .product-price { color: green; }
+    .old-price { text-decoration: line-through; color: red; margin-left: 5px; }
+  </style>
 </head>
 <body>
 
-<!-- Header -->
-<header class="bg-light py-3">
+  <h1 class="text-center mb-4">Amazon Best Deals</h1>
+
   <div class="container">
-    <div class="d-flex justify-content-between align-items-center">
-      <a class="navbar-brand" href="#">Amazon Deals</a>
-      <form class="d-flex">
-        <input class="form-control me-2" type="search" placeholder="Search products" id="searchBar">
-      </form>
+    <div class="row" id="product-container">
+      <!-- Products will be inserted here -->
     </div>
   </div>
-</header>
 
-<!-- Categories -->
-<section class="container mt-4">
-  <h2 class="mb-3">Categories</h2>
-  <div id="categoryButtons" class="d-flex flex-wrap gap-2">
-    <!-- Dynamic categories will be injected here -->
-  </div>
-</section>
+  <footer class="text-center mt-4">
+    <p>&copy; 2025 Amazon Affiliate | Powered by Bootstrap</p>
+  </footer>
 
-<!-- Products -->
-<section class="container mt-4">
-  <h2 class="mb-3">Best Deals</h2>
-  <div class="row" id="productContainer">
-    <!-- Dynamic products will be injected here -->
-  </div>
-</section>
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- Blog Section -->
-<section class="container mt-5">
-  <h2>Latest Blogs</h2>
-  <ul id="blogList">
-    <!-- Dynamic blog list will be injected here -->
-  </ul>
-</section>
+  <!-- Product Data -->
+  <script src="products.js"></script>
 
-<!-- Footer -->
-<footer class="bg-light text-center p-3 mt-5">
-  © 2025 Amazon Affiliate | Powered by FoodMart Theme
-</footer>
-
-<!-- Bootstrap Bundle with Popper -->
-<script src="js/bootstrap.bundle.min.js"></script>
-<!-- Products Data -->
-<script src="products.js"></script>
-<!-- Main Script -->
-<script src="js/main.js"></script>
+  <!-- Main Logic -->
+  <script src="main.js"></script>
 
 </body>
 </html>
