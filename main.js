@@ -1,7 +1,7 @@
-
 const categories = [...new Set(products.map(p => p.category))];
 
 window.onload = function() {
+  // Add category buttons
   const nav = document.getElementById('categoryButtons');
   categories.forEach(cat => {
     let btn = document.createElement('button');
@@ -11,12 +11,25 @@ window.onload = function() {
     nav.appendChild(btn);
   });
 
+  // Load all products initially
   loadProducts('All');
 
+  // Search functionality
   document.getElementById('searchBar').addEventListener('input', function() {
     const searchValue = this.value.toLowerCase();
     loadProducts('All', searchValue);
   });
+
+  // Load Blogs
+  fetch('blogs.json')
+    .then(response => response.json())
+    .then(blogs => {
+      const blogList = document.getElementById('blogList');
+      blogs.forEach(blog => {
+        blogList.innerHTML += `<li><a href="${blog.link}" target="_blank">${blog.title}</a></li>`;
+      });
+    })
+    .catch(err => console.log("Blog load failed", err));
 };
 
 function loadProducts(category, searchTerm = "") {
