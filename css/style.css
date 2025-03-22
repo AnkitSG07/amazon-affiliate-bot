@@ -788,3 +788,60 @@ h1,h2,h3,h4,h5,h6 {
   font-size: 14px;
   margin-top: 5px;
 }
+/* === Enhanced Category Card Styling === */
+.category-card {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 20px;
+  width: 180px;
+  text-align: center;
+  box-shadow: 0px 5px 20px rgba(0,0,0,0.05);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.category-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0px 15px 25px rgba(0,0,0,0.1);
+}
+
+.category-card .icon {
+  font-size: 40px;
+  margin-bottom: 10px;
+  color: #ffc43f;
+}
+
+.category-card .category-name {
+  font-weight: 600;
+  font-size: 16px;
+  color: #333;
+}
+
+/* === Banner Section Styling === */
+.banner-section {
+  background: #e6f3fb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 40px 20px;
+  border-radius: 12px;
+  margin: 30px 0;
+}
+
+.banner-content h2 {
+  font-family: var(--heading-font);
+  font-weight: bold;
+  color: #222;
+  margin-bottom: 10px;
+}
+
+.banner-content p {
+  color: #555;
+  margin-bottom: 20px;
+}
+
+.banner-section img {
+  max-width: 200px;
+  border-radius: 8px;
+}
+
