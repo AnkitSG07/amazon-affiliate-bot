@@ -1,14 +1,13 @@
 window.onload = function() {
   // Create category cards instead of buttons
   const categories = [...new Set(products.map(p => p.category))];
-  const nav = document.getElementById('categoryButtons');
+  const nav = document.getElementById('categoryCards'); // Updated ID to match index.html
 
   categories.forEach(cat => {
     let card = document.createElement('div');
-    card.className = "category-card text-center p-3 m-2 border rounded shadow-sm";
-    card.style.cursor = "pointer";
+    card.className = "category-card text-center";
     card.innerHTML = `
-      <div class="icon mb-2" style="font-size:30px;">🍀</div> 
+      <img src="https://i.imgur.com/yW2W9SC.png" alt="${cat} Icon">
       <div class="category-name fw-bold">${cat}</div>
     `;
     card.onclick = () => loadProducts(cat);
