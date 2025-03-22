@@ -2,7 +2,7 @@ name: Auto Generate Blog
 
 on:
   schedule:
-    - cron: '30 0 * * *'  # Runs daily at 00:30
+    - cron: '30 0 * * *'  # 12:30 AM daily
   workflow_dispatch:
 
 jobs:
