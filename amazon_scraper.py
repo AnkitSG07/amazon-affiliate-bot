@@ -1,6 +1,5 @@
 import requests
 from bs4 import BeautifulSoup
-import os
 
 AMAZON_BESTSELLER_URL = "https://www.amazon.in/gp/bestsellers"
 AFFILIATE_TAG = "ankit007"
@@ -9,40 +8,32 @@ def scrape_bestsellers():
     response = requests.get(AMAZON_BESTSELLER_URL, headers={'User-Agent': 'Mozilla/5.0'})
     soup = BeautifulSoup(response.text, 'html.parser')
 
-    # Attempt multiple item selectors
-    items = soup.select(".p13n-sc-uncoverable-faceout")  # 1st try
+    # Multiple selectors for robustness
+    items = soup.select(".p13n-sc-uncoverable-faceout")  
     if not items:
-        items = soup.select("li.zg-item-immersion")       # 2nd fallback
+        items = soup.select("li.zg-item-immersion")
     if not items:
-        items = soup.select("div.zg-grid-general-faceout")  # 3rd fallback
+        items = soup.select("div.zg-grid-general-faceout")
 
     products = []
     for item in items:
-        # Title
         title = (item.select_one(".p13n-sc-truncate-desktop-type2") or 
                  item.select_one(".p13n-sc-truncated") or
-                 item.select_one("._cDEzb_p13n-sc-css-line-clamp-3_1Fn1y"))  # fallback for new class
+                 item.select_one("._cDEzb_p13n-sc-css-line-clamp-3_1Fn1y"))
 
-        # Link
         link = item.select_one("a.a-link-normal")
-        
-        # Image
         image = item.select_one("img")
-        
-        # Price
         price = (item.select_one(".p13n-sc-price") or
                  item.select_one("span.a-price > span.a-offscreen"))
 
-        # Category
         category_tag = item.find_previous("h2")
         category_text = category_tag.get_text(strip=True) if category_tag else "Miscellaneous"
 
-        # Price logic
         price_text = price.get_text(strip=True) if price else "N/A"
         old_price = "N/A"
         if price and price_text != "N/A":
             try:
-                price_number = int(price_text.replace('₹','').replace(',', '').strip())
+                price_number = int(price_text.replace('₹', '').replace(',', '').strip())
                 old_price = f"₹{price_number * 2}"
             except ValueError:
                 price_number = "N/A"
@@ -83,7 +74,5 @@ if __name__ == "__main__":
     print("Scraping Amazon Bestsellers...")
     products = scrape_bestsellers()
     print(f"Found {len(products)} products.")
-    for p in products:
-        print(p)
     save_to_js(products)
     print("All done!")
