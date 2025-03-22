@@ -8,18 +8,36 @@ AFFILIATE_TAG = "ankit007"
 def scrape_bestsellers():
     response = requests.get(AMAZON_BESTSELLER_URL, headers={'User-Agent': 'Mozilla/5.0'})
     soup = BeautifulSoup(response.text, 'html.parser')
-    products = []
 
-    for item in soup.select(".p13n-sc-uncoverable-faceout"):
-        title = item.select_one(".p13n-sc-truncate-desktop-type2")
+    # Attempt multiple item selectors
+    items = soup.select(".p13n-sc-uncoverable-faceout")  # 1st try
+    if not items:
+        items = soup.select("li.zg-item-immersion")       # 2nd fallback
+    if not items:
+        items = soup.select("div.zg-grid-general-faceout")  # 3rd fallback
+
+    products = []
+    for item in items:
+        # Title
+        title = (item.select_one(".p13n-sc-truncate-desktop-type2") or 
+                 item.select_one(".p13n-sc-truncated") or
+                 item.select_one("._cDEzb_p13n-sc-css-line-clamp-3_1Fn1y"))  # fallback for new class
+
+        # Link
         link = item.select_one("a.a-link-normal")
+        
+        # Image
         image = item.select_one("img")
-        price = item.select_one(".p13n-sc-price")
-        if not price:
-            price = item.select_one("span.a-price > span.a-offscreen")
+        
+        # Price
+        price = (item.select_one(".p13n-sc-price") or
+                 item.select_one("span.a-price > span.a-offscreen"))
+
+        # Category
         category_tag = item.find_previous("h2")
         category_text = category_tag.get_text(strip=True) if category_tag else "Miscellaneous"
 
+        # Price logic
         price_text = price.get_text(strip=True) if price else "N/A"
         old_price = "N/A"
         if price and price_text != "N/A":
@@ -40,6 +58,7 @@ def scrape_bestsellers():
                 'link': "https://www.amazon.in" + link['href'] + f"&tag={AFFILIATE_TAG}"
             }
             products.append(product)
+
     return products
 
 def save_to_js(products):
@@ -61,5 +80,10 @@ def save_to_js(products):
     print("products.js updated successfully.")
 
 if __name__ == "__main__":
+    print("Scraping Amazon Bestsellers...")
     products = scrape_bestsellers()
+    print(f"Found {len(products)} products.")
+    for p in products:
+        print(p)
     save_to_js(products)
+    print("All done!")
