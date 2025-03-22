@@ -1,34 +1,31 @@
-// js/main.js
 window.onload = function() {
-  // Create category buttons
+  // Create category cards instead of buttons
   const categories = [...new Set(products.map(p => p.category))];
   const nav = document.getElementById('categoryButtons');
-  // "All" button
-  let allBtn = document.createElement('button');
-  allBtn.className = "btn btn-outline-primary";
-  allBtn.innerText = "All";
-  allBtn.onclick = () => loadProducts("All");
-  nav.appendChild(allBtn);
-  
+
   categories.forEach(cat => {
-    let btn = document.createElement('button');
-    btn.className = "btn btn-outline-primary";
-    btn.innerText = cat;
-    btn.onclick = () => loadProducts(cat);
-    nav.appendChild(btn);
+    let card = document.createElement('div');
+    card.className = "category-card text-center p-3 m-2 border rounded shadow-sm";
+    card.style.cursor = "pointer";
+    card.innerHTML = `
+      <div class="icon mb-2" style="font-size:30px;">🍀</div> 
+      <div class="category-name fw-bold">${cat}</div>
+    `;
+    card.onclick = () => loadProducts(cat);
+    nav.appendChild(card);
   });
 
-  // Load all products initially
+  // Load "All" products initially
   loadProducts("All");
 
-  // Search functionality
+  // Hook up search
   const searchBar = document.getElementById('searchBar');
   searchBar.addEventListener('input', function() {
     const searchTerm = this.value.toLowerCase();
     loadProducts("All", searchTerm);
   });
 
-  // Load blogs from blogs.json
+  // Load blogs
   fetch('blogs.json')
     .then(res => res.json())
     .then(blogData => {
@@ -52,15 +49,15 @@ function loadProducts(category, searchTerm = "") {
       col.className = "col-md-3 mb-4";
       col.innerHTML = `
         <div class="product-card text-center position-relative">
-          <div class="discount-badge">50% OFF</div>
-          <div class="category-badge">${prod.category}</div>
+          <span class="category-badge">${prod.category}</span>
+          <span class="discount-badge">${prod.discount}</span>
           <img src="${prod.image}" alt="${prod.title}">
           <div class="product-title mt-2">${prod.title}</div>
+          <div class="star-rating">⭐️⭐️⭐️⭐️⭐️</div>
           <div class="mt-2">
             <span class="product-price">${prod.price}</span>
             <span class="old-price">${prod.old_price}</span>
           </div>
-          <div class="star-rating">★★★★☆</div>
           <a href="${prod.link}" target="_blank" class="btn btn-primary mt-2">Buy Now</a>
         </div>`;
       container.appendChild(col);
