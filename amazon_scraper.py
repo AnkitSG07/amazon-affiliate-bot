@@ -5,16 +5,20 @@ from bs4 import BeautifulSoup
 AMAZON_BESTSELLER_URL = "https://www.amazon.in/gp/bestsellers"
 AFFILIATE_TAG = "ankit007"
 
+# Allowed Categories
+ALLOWED_CATEGORIES = ["Bestsellers", "Price Drops", "Best Deals"]
+
+
 def scrape_bestsellers():
     """Scrapes Amazon Bestsellers and returns a list of product dictionaries."""
-    response = requests.get(AMAZON_BESTSELLER_URL, headers={'User-Agent': 'Mozilla/5.0'})
-    
+    response = requests.get(AMAZON_BESTSELLER_URL, headers={"User-Agent": "Mozilla/5.0"})
+
     # Check for successful response
     if response.status_code != 200:
         print(f"❌ Failed to fetch data. Status Code: {response.status_code}")
         return []
 
-    soup = BeautifulSoup(response.text, 'html.parser')
+    soup = BeautifulSoup(response.text, "html.parser")
 
     # Multiple selectors to account for Amazon's layout changes
     items = soup.select(".p13n-sc-uncoverable-faceout") or \
@@ -37,48 +41,41 @@ def scrape_bestsellers():
 
         # Extract image with fallback
         image = item.select_one("img")
-        image_url = image.get('src') or image.get('data-src') if image else None
+        image_url = image.get("src") or image.get("data-src") if image else None
 
         # Extract price with fallback
         price = (item.select_one(".p13n-sc-price") or
                  item.select_one("span.a-price > span.a-offscreen"))
         price_text = price.get_text(strip=True) if price else "N/A"
 
-        # Determine category or fallback to Miscellaneous
-        category_tag = item.find_previous("h2")
-        category_text = category_tag.get_text(strip=True) if category_tag else "Miscellaneous"
-
         # Calculate old price and discount
         old_price, discount = "N/A", "0%"
         if price_text != "N/A":
             try:
-                price_number = int(price_text.replace('₹', '').replace(',', '').strip())
+                price_number = int(price_text.replace("₹", "").replace(",", "").strip())
                 old_price = f"₹{price_number * 2}"
                 discount = f"{round(((price_number * 2 - price_number) / (price_number * 2)) * 100)}%"
             except ValueError:
                 price_number, old_price = "N/A", "N/A"
 
-        # Classify product as bestseller, price drop, or best deal
-        product_type = "Bestsellers"  # Default to Bestsellers
-
+        # Classify product as best deal or price drop
+        product_type = "Bestsellers"
         if discount != "0%" and price_number != "N/A":
-            discount_value = int(discount.replace('%', ''))
-            
-            if discount_value > 40:
+            if int(discount.replace("%", "")) > 40:
                 product_type = "Price Drops"
-            elif discount_value > 20:
+            elif int(discount.replace("%", "")) > 20:
                 product_type = "Best Deals"
 
         # Add valid products
-        if title and link and image_url:
+        if title and link and image_url and product_type in ALLOWED_CATEGORIES:
             product = {
-                'title': title.get_text(strip=True),
-                'image': image_url,
-                'price': price_text,
-                'old_price': old_price,
-                'category': category_text,
-                'type': product_type,  # Corrected product type field
-                'link': f"https://www.amazon.in{link['href']}&tag={AFFILIATE_TAG}"
+                "title": title.get_text(strip=True),
+                "image": image_url,
+                "price": price_text,
+                "old_price": old_price,
+                "category": product_type,
+                "type": product_type,
+                "link": f"https://www.amazon.in{link['href']}&tag={AFFILIATE_TAG}"
             }
             products.append(product)
 
