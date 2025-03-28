@@ -5,6 +5,7 @@ const products = [
     price: "₹999",
     old_price: "₹1999",
     category: "Bestsellers",
+    type: "Bestsellers",
     link: "https://www.amazon.in/example-product1?tag=ankit007"
   },
   {
@@ -13,6 +14,7 @@ const products = [
     price: "₹799",
     old_price: "₹1499",
     category: "Price Drops",
+    type: "Price Drop",
     link: "https://www.amazon.in/example-product2?tag=ankit007"
   },
   {
@@ -21,6 +23,7 @@ const products = [
     price: "₹699",
     old_price: "₹1299",
     category: "Best Deals",
+    type: "Best Deal",
     link: "https://www.amazon.in/example-product3?tag=ankit007"
   },
   {
@@ -29,6 +32,7 @@ const products = [
     price: "₹499",
     old_price: "₹999",
     category: "Bestsellers",
+    type: "Bestsellers",
     link: "https://www.amazon.in/example-product4?tag=ankit007"
   },
   {
@@ -37,6 +41,7 @@ const products = [
     price: "₹899",
     old_price: "₹1599",
     category: "Price Drops",
+    type: "Price Drop",
     link: "https://www.amazon.in/example-product5?tag=ankit007"
   },
   {
@@ -45,6 +50,7 @@ const products = [
     price: "₹1099",
     old_price: "₹2099",
     category: "Best Deals",
+    type: "Best Deal",
     link: "https://www.amazon.in/example-product6?tag=ankit007"
   }
 ];
