@@ -1,10 +1,9 @@
 window.onload = function () {
-  // Define allowed categories
-  const allowedCategories = ["Bestsellers", "Price Drops", "Best Deals"];
+  // Create category cards dynamically
+  const categories = [...new Set(products.map((p) => p.category))];
   const nav = document.getElementById("categoryCards");
 
-  // Create fixed category cards
-  allowedCategories.forEach((cat) => {
+  categories.forEach((cat) => {
     let card = document.createElement("div");
     card.className = "category-card text-center";
     card.innerHTML = `
@@ -16,7 +15,7 @@ window.onload = function () {
   });
 
   // Load gallery sections dynamically
-  loadSection("Bestsellers", "productContainerBestsellers");
+  loadSection("Bestseller", "productContainerBestsellers");
   loadSection("Price Drops", "productContainerPriceDrops");
   loadSection("Best Deals", "productContainerBestDeals");
 
@@ -54,7 +53,7 @@ function loadProducts(category, searchTerm = "") {
     .forEach((prod) => addProductCard(prod, container));
 }
 
-// Load section by type (Bestsellers, Price Drops, Best Deals)
+// Load section by type (Bestseller, Price Drops, Best Deals)
 function loadSection(type, containerId) {
   const container = document.getElementById(containerId);
 
