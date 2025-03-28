@@ -73,7 +73,7 @@ function addProductCard(prod, container) {
     <div class="product-card text-center position-relative">
       <span class="category-badge">${prod.category}</span>
       <span class="discount-badge">${prod.type}</span>
-      <img src="${prod.image}" alt="${prod.title}">
+      <img src="${prod.image}" alt="${prod.title}" class="mt-2" style="max-height: 180px;">
       <div class="product-title mt-2">${prod.title}</div>
       <div class="star-rating">⭐️⭐️⭐️⭐️⭐️</div>
       <div class="mt-2">
