@@ -1,9 +1,10 @@
 window.onload = function () {
-  // Create category cards dynamically
-  const categories = [...new Set(products.map((p) => p.category))];
+  // Define allowed categories
+  const allowedCategories = ["Bestsellers", "Price Drops", "Best Deals"];
   const nav = document.getElementById("categoryCards");
 
-  categories.forEach((cat) => {
+  // Create fixed category cards
+  allowedCategories.forEach((cat) => {
     let card = document.createElement("div");
     card.className = "category-card text-center";
     card.innerHTML = `
@@ -15,9 +16,9 @@ window.onload = function () {
   });
 
   // Load gallery sections dynamically
-  loadSection("Bestseller", "productContainerBestsellers");
-  loadSection("Price Drop", "productContainerPriceDrops");
-  loadSection("Best Deal", "productContainerBestDeals");
+  loadSection("Bestsellers", "productContainerBestsellers");
+  loadSection("Price Drops", "productContainerPriceDrops");
+  loadSection("Best Deals", "productContainerBestDeals");
 
   // Hook up search
   const searchBar = document.getElementById("searchBar");
@@ -40,32 +41,20 @@ window.onload = function () {
     .catch((err) => console.error("Blogs load error:", err));
 };
 
-// ✅ Load products by category or search term
+// Load products by category or search term
 function loadProducts(category, searchTerm = "") {
-  const containers = {
-    Bestseller: document.getElementById("productContainerBestsellers"),
-    "Price Drop": document.getElementById("productContainerPriceDrops"),
-    "Best Deal": document.getElementById("productContainerBestDeals"),
-  };
-
-  // Clear all sections
-  Object.values(containers).forEach((container) => (container.innerHTML = ""));
-
-  // Filter and load products into respective sections
+  const container = document.getElementById("productContainerBestsellers");
+  container.innerHTML = "";
   products
     .filter(
       (p) =>
         (category === "All" || p.category === category) &&
         p.title.toLowerCase().includes(searchTerm)
     )
-    .forEach((prod) => {
-      if (containers[prod.type]) {
-        addProductCard(prod, containers[prod.type]);
-      }
-    });
+    .forEach((prod) => addProductCard(prod, container));
 }
 
-// ✅ Load section by type (Bestseller, Price Drop, Best Deal)
+// Load section by type (Bestsellers, Price Drops, Best Deals)
 function loadSection(type, containerId) {
   const container = document.getElementById(containerId);
 
@@ -81,7 +70,7 @@ function loadSection(type, containerId) {
     .forEach((prod) => addProductCard(prod, container));
 }
 
-// ✅ Add product card to the correct section
+// Add product card to the given container
 function addProductCard(prod, container) {
   let col = document.createElement("div");
   col.className = "col-md-3 mb-4";
