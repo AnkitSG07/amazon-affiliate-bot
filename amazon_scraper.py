@@ -1,24 +1,13 @@
 import requests
 from bs4 import BeautifulSoup
-import random
 
 # Amazon Bestsellers URL
 AMAZON_BESTSELLER_URL = "https://www.amazon.in/gp/bestsellers"
 AFFILIATE_TAG = "ankit007"
 
-# User-Agent List to Rotate
-USER_AGENTS = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-]
-
-HEADERS = {"User-Agent": random.choice(USER_AGENTS)}
-
-
 def scrape_bestsellers():
     """Scrapes Amazon Bestsellers and returns a list of product dictionaries."""
-    response = requests.get(AMAZON_BESTSELLER_URL, headers=HEADERS)
+    response = requests.get(AMAZON_BESTSELLER_URL, headers={'User-Agent': 'Mozilla/5.0'})
     
     # Check for successful response
     if response.status_code != 200:
@@ -32,7 +21,6 @@ def scrape_bestsellers():
             soup.select("li.zg-item-immersion") or \
             soup.select("div.zg-grid-general-faceout")
 
-    # Check if items were found
     if not items:
         print("❗ No products found. Amazon may have changed the layout.")
         return []
@@ -47,29 +35,38 @@ def scrape_bestsellers():
         # Extract product link
         link = item.select_one("a.a-link-normal")
 
-        # Extract image (handle lazy loading with fallback)
+        # Extract image with fallback
         image = item.select_one("img")
         image_url = image.get('src') or image.get('data-src') if image else None
 
-        # Extract price and handle multiple formats
+        # Extract price with fallback
         price = (item.select_one(".p13n-sc-price") or
                  item.select_one("span.a-price > span.a-offscreen"))
         price_text = price.get_text(strip=True) if price else "N/A"
 
-        # Determine category (from heading or fallback to 'Miscellaneous')
+        # Determine category or fallback to Miscellaneous
         category_tag = item.find_previous("h2")
         category_text = category_tag.get_text(strip=True) if category_tag else "Miscellaneous"
 
-        # Calculate old price for display (50% as fallback)
-        old_price = "N/A"
+        # Calculate old price and discount
+        old_price, discount = "N/A", "0%"
         if price_text != "N/A":
             try:
                 price_number = int(price_text.replace('₹', '').replace(',', '').strip())
-                old_price = f"₹{price_number * 2}"  # Assumed old price as double
+                old_price = f"₹{price_number * 2}"
+                discount = f"{round(((price_number * 2 - price_number) / (price_number * 2)) * 100)}%"
             except ValueError:
-                old_price = "N/A"
+                price_number, old_price = "N/A", "N/A"
 
-        # Add valid products to list
+        # Classify product as best deal or price drop
+        product_type = "Bestseller"
+        if discount != "0%" and price_number != "N/A":
+            if int(discount.replace('%', '')) > 40:
+                product_type = "Price Drop"
+            elif int(discount.replace('%', '')) > 20:
+                product_type = "Best Deal"
+
+        # Add valid products
         if title and link and image_url:
             product = {
                 'title': title.get_text(strip=True),
@@ -77,6 +74,7 @@ def scrape_bestsellers():
                 'price': price_text,
                 'old_price': old_price,
                 'category': category_text,
+                'type': product_type,  # New Type Field
                 'link': f"https://www.amazon.in{link['href']}&tag={AFFILIATE_TAG}"
             }
             products.append(product)
@@ -95,6 +93,7 @@ def save_to_js(products):
         price: "{p['price']}",
         old_price: "{p['old_price']}",
         category: "{p['category']}",
+        type: "{p['type']}",
         link: "{p['link']}"
     }},
 """
