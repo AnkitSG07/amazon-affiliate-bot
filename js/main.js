@@ -40,20 +40,32 @@ window.onload = function () {
     .catch((err) => console.error("Blogs load error:", err));
 };
 
-// Load products by category or search term
+// ✅ Load products by category or search term
 function loadProducts(category, searchTerm = "") {
-  const container = document.getElementById("productContainerBestsellers");
-  container.innerHTML = "";
+  const containers = {
+    Bestseller: document.getElementById("productContainerBestsellers"),
+    "Price Drop": document.getElementById("productContainerPriceDrops"),
+    "Best Deal": document.getElementById("productContainerBestDeals"),
+  };
+
+  // Clear all sections
+  Object.values(containers).forEach((container) => (container.innerHTML = ""));
+
+  // Filter and load products into respective sections
   products
     .filter(
       (p) =>
         (category === "All" || p.category === category) &&
         p.title.toLowerCase().includes(searchTerm)
     )
-    .forEach((prod) => addProductCard(prod, container));
+    .forEach((prod) => {
+      if (containers[prod.type]) {
+        addProductCard(prod, containers[prod.type]);
+      }
+    });
 }
 
-// Load section by type (Bestseller, Price Drop, Best Deal)
+// ✅ Load section by type (Bestseller, Price Drop, Best Deal)
 function loadSection(type, containerId) {
   const container = document.getElementById(containerId);
 
@@ -69,7 +81,7 @@ function loadSection(type, containerId) {
     .forEach((prod) => addProductCard(prod, container));
 }
 
-// Add product card to the given container
+// ✅ Add product card to the correct section
 function addProductCard(prod, container) {
   let col = document.createElement("div");
   col.className = "col-md-3 mb-4";
