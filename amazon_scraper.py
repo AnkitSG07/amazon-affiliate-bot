@@ -58,13 +58,16 @@ def scrape_bestsellers():
             except ValueError:
                 price_number, old_price = "N/A", "N/A"
 
-        # Classify product as best deal or price drop
-        product_type = "Bestseller"
+        # Classify product as bestseller, price drop, or best deal
+        product_type = "Bestsellers"  # Default to Bestsellers
+
         if discount != "0%" and price_number != "N/A":
-            if int(discount.replace('%', '')) > 40:
-                product_type = "Price Drop"
-            elif int(discount.replace('%', '')) > 20:
-                product_type = "Best Deal"
+            discount_value = int(discount.replace('%', ''))
+            
+            if discount_value > 40:
+                product_type = "Price Drops"
+            elif discount_value > 20:
+                product_type = "Best Deals"
 
         # Add valid products
         if title and link and image_url:
@@ -74,7 +77,7 @@ def scrape_bestsellers():
                 'price': price_text,
                 'old_price': old_price,
                 'category': category_text,
-                'type': product_type,  # New Type Field
+                'type': product_type,  # Corrected product type field
                 'link': f"https://www.amazon.in{link['href']}&tag={AFFILIATE_TAG}"
             }
             products.append(product)
