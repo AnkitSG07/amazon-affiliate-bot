@@ -1,10 +1,10 @@
-window.onload = function() {
+window.onload = function () {
   // Create category cards dynamically
-  const categories = [...new Set(products.map(p => p.category))];
-  const nav = document.getElementById('categoryCards');
+  const categories = [...new Set(products.map((p) => p.category))];
+  const nav = document.getElementById("categoryCards");
 
-  categories.forEach(cat => {
-    let card = document.createElement('div');
+  categories.forEach((cat) => {
+    let card = document.createElement("div");
     card.className = "category-card text-center";
     card.innerHTML = `
       <img src="https://i.imgur.com/yW2W9SC.png" alt="${cat} Icon">
@@ -15,41 +15,45 @@ window.onload = function() {
   });
 
   // Load gallery sections dynamically
-  loadSection("Bestsellers", "productContainerBestsellers");
+  loadSection("Bestseller", "productContainerBestsellers");
   loadSection("Price Drop", "productContainerPriceDrops");
   loadSection("Best Deal", "productContainerBestDeals");
 
   // Hook up search
-  const searchBar = document.getElementById('searchBar');
-  searchBar.addEventListener('input', function() {
+  const searchBar = document.getElementById("searchBar");
+  searchBar.addEventListener("input", function () {
     const searchTerm = this.value.toLowerCase();
     loadProducts("All", searchTerm);
   });
 
   // Load blogs dynamically from blogs.json
-  fetch('blogs.json')
-    .then(res => res.json())
-    .then(blogData => {
-      const blogList = document.getElementById('blogList');
-      blogData.forEach(blog => {
-        let li = document.createElement('li');
+  fetch("blogs.json")
+    .then((res) => res.json())
+    .then((blogData) => {
+      const blogList = document.getElementById("blogList");
+      blogData.forEach((blog) => {
+        let li = document.createElement("li");
         li.innerHTML = `<a href="${blog.link}" target="_blank">${blog.title}</a>`;
         blogList.appendChild(li);
       });
     })
-    .catch(err => console.error("Blogs load error:", err));
+    .catch((err) => console.error("Blogs load error:", err));
 };
 
 // Load products by category or search term
 function loadProducts(category, searchTerm = "") {
-  const container = document.getElementById('productContainer');
+  const container = document.getElementById("productContainerBestsellers");
   container.innerHTML = "";
   products
-    .filter(p => (category === "All" || p.category === category) && p.title.toLowerCase().includes(searchTerm))
-    .forEach(prod => addProductCard(prod, container));
+    .filter(
+      (p) =>
+        (category === "All" || p.category === category) &&
+        p.title.toLowerCase().includes(searchTerm)
+    )
+    .forEach((prod) => addProductCard(prod, container));
 }
 
-// Load section by type (Bestsellers, Price Drops, Best Deals)
+// Load section by type (Bestseller, Price Drop, Best Deal)
 function loadSection(type, containerId) {
   const container = document.getElementById(containerId);
 
@@ -61,19 +65,19 @@ function loadSection(type, containerId) {
 
   container.innerHTML = "";
   products
-    .filter(p => p.category === type) // Correct filter
-    .forEach(prod => addProductCard(prod, container));
+    .filter((p) => p.type === type)
+    .forEach((prod) => addProductCard(prod, container));
 }
 
 // Add product card to the given container
 function addProductCard(prod, container) {
-  let col = document.createElement('div');
+  let col = document.createElement("div");
   col.className = "col-md-3 mb-4";
   col.innerHTML = `
     <div class="product-card text-center position-relative">
       <span class="category-badge">${prod.category}</span>
       <span class="discount-badge">${prod.type}</span>
-      <img src="${prod.image}" alt="${prod.title}" class="mt-2" style="max-height: 180px;">
+      <img src="${prod.image}" alt="${prod.title}">
       <div class="product-title mt-2">${prod.title}</div>
       <div class="star-rating">⭐️⭐️⭐️⭐️⭐️</div>
       <div class="mt-2">
