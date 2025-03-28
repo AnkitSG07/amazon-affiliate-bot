@@ -61,7 +61,7 @@ function loadSection(type, containerId) {
 
   container.innerHTML = "";
   products
-    .filter(p => p.type === type)
+    .filter(p => p.category === type) // Correct filter
     .forEach(prod => addProductCard(prod, container));
 }
 
