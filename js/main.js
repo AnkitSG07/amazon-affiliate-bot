@@ -15,9 +15,9 @@ window.onload = function() {
   });
 
   // Load gallery sections dynamically
-  loadSection("Bestsellers", "bestsellerContainer");
-  loadSection("Price Drop", "priceDropContainer");
-  loadSection("Best Deal", "bestDealContainer");
+  loadSection("Bestsellers", "productContainerBestsellers");
+  loadSection("Price Drop", "productContainerPriceDrops");
+  loadSection("Best Deal", "productContainerBestDeals");
 
   // Hook up search
   const searchBar = document.getElementById('searchBar');
@@ -26,7 +26,7 @@ window.onload = function() {
     loadProducts("All", searchTerm);
   });
 
-  // Load blogs
+  // Load blogs dynamically from blogs.json
   fetch('blogs.json')
     .then(res => res.json())
     .then(blogData => {
@@ -52,13 +52,20 @@ function loadProducts(category, searchTerm = "") {
 // Load section by type (Bestsellers, Price Drops, Best Deals)
 function loadSection(type, containerId) {
   const container = document.getElementById(containerId);
+
+  // Check if the container exists
+  if (!container) {
+    console.error(`Error: Container with ID "${containerId}" not found.`);
+    return;
+  }
+
   container.innerHTML = "";
   products
     .filter(p => p.type === type)
     .forEach(prod => addProductCard(prod, container));
 }
 
-// Add product card to given container
+// Add product card to the given container
 function addProductCard(prod, container) {
   let col = document.createElement('div');
   col.className = "col-md-3 mb-4";
