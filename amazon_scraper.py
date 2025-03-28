@@ -13,10 +13,15 @@ HEADERS = {
 }
 
 def scrape_products(url, category):
+    """Scrapes products from the given URL and assigns them to the specified category."""
     response = requests.get(url, headers=HEADERS)
-    soup = BeautifulSoup(response.text, 'html.parser')
+    if response.status_code != 200:
+        print(f"❌ Failed to fetch data from {url}")
+        return []
 
-    # Multiple selectors to ensure robustness
+    soup = BeautifulSoup(response.text, 'html.parser')
+    
+    # Using multiple selectors for robustness
     items = soup.select(".p13n-sc-uncoverable-faceout") or \
             soup.select("li.zg-item-immersion") or \
             soup.select("div.zg-grid-general-faceout")
@@ -29,6 +34,9 @@ def scrape_products(url, category):
 
         link = item.select_one("a.a-link-normal")
         image = item.select_one("img")
+
+        # Correcting image selection with fallback
+        image_url = image.get('src') or image.get('data-src') if image else None
         price = (item.select_one(".p13n-sc-price") or
                  item.select_one("span.a-price > span.a-offscreen"))
 
@@ -42,17 +50,17 @@ def scrape_products(url, category):
         if price and price_text != "N/A":
             try:
                 price_number = int(price_text.replace('₹', '').replace(',', '').strip())
-                old_price = f"₹{price_number * 2}"
+                old_price = f"₹{price_number * 2}"  # Assuming 50% old price as fallback
                 discount_percentage = 50
             except ValueError:
                 price_number = "N/A"
                 old_price = "N/A"
                 discount_percentage = 0
 
-        if title and link and image:
+        if title and link and image_url:
             product = {
                 'title': title.get_text(strip=True),
-                'image': image['src'],
+                'image': image_url,
                 'price': price_text,
                 'old_price': old_price,
                 'category': category,
@@ -61,10 +69,12 @@ def scrape_products(url, category):
             }
             products.append(product)
 
+    print(f"✅ Scraped {len(products)} products from {category}.")
     return products
 
 
 def save_to_js(products):
+    """Saves the scraped product data to products.js."""
     js_content = "const products = [\n"
     for p in products:
         js_content += f"""    {{
@@ -85,21 +95,22 @@ def save_to_js(products):
 
 
 def main():
-    print("🚀 Scraping Amazon Data...")
+    """Main function to scrape and save products."""
+    print("🚀 Starting Amazon Scraper...")
 
+    # Scraping Bestsellers
     bestsellers = scrape_products(AMAZON_BESTSELLER_URL, "Bestsellers")
-    print(f"✅ Scraped {len(bestsellers)} bestsellers.")
-
+    
+    # Scraping Best Deals
     best_deals = scrape_products(AMAZON_DEALS_URL, "Best Deals")
-    print(f"✅ Scraped {len(best_deals)} best deals.")
-
+    
+    # Scraping Discounted Products
     discounted_items = scrape_products(AMAZON_DISCOUNT_URL, "Drastically Reduced")
-    print(f"✅ Scraped {len(discounted_items)} discounted items.")
 
-    # Combine all products
+    # Merging all results
     all_products = bestsellers + best_deals + discounted_items
 
-    # Save to products.js
+    # Save to JS file
     save_to_js(all_products)
 
     print("🎉 Scraping and saving completed successfully!")
