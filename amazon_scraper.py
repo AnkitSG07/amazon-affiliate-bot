@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 AMAZON_BESTSELLER_URL = "https://www.amazon.in/gp/bestsellers"
 AFFILIATE_TAG = "ankit007"
 
-# Allowed Categories
+# Allowed Categories for Display
 ALLOWED_CATEGORIES = ["Bestsellers", "Price Drops", "Best Deals"]
 
 
@@ -50,20 +50,21 @@ def scrape_bestsellers():
 
         # Calculate old price and discount
         old_price, discount = "N/A", "0%"
+        price_number = "N/A"
         if price_text != "N/A":
             try:
                 price_number = int(price_text.replace("₹", "").replace(",", "").strip())
-                old_price = f"₹{price_number * 2}"
+                old_price = f"₹{price_number * 2}"  # Assuming 50% discount for old price
                 discount = f"{round(((price_number * 2 - price_number) / (price_number * 2)) * 100)}%"
             except ValueError:
                 price_number, old_price = "N/A", "N/A"
 
-        # Classify product as best deal or price drop
+        # Classify product as Best Deal or Price Drop based on discount
         product_type = "Bestsellers"
         if discount != "0%" and price_number != "N/A":
-            if int(discount.replace("%", "")) > 40:
+            if int(discount.replace('%', '')) >= 40:
                 product_type = "Price Drops"
-            elif int(discount.replace("%", "")) > 20:
+            elif int(discount.replace('%', '')) >= 20:
                 product_type = "Best Deals"
 
         # Add valid products
