@@ -2,7 +2,7 @@ import time
 import random
 import requests
 from bs4 import BeautifulSoup
-from seleniumwire import webdriver  # Use selenium-wire for proxy rotation
+from seleniumwire import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -25,13 +25,7 @@ USER_AGENTS = [
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.83 Safari/537.36",
 ]
 
-# Proxies List (Optional - To Avoid IP Blocking)
-PROXIES = [
-    "http://username:password@proxy1.com:8080",
-    "http://username:password@proxy2.com:8080",
-]
 
-# Setup Selenium for scraping with rotating proxies and user-agent
 def setup_selenium():
     """Sets up headless Chrome driver with rotating user-agent."""
     options = Options()
@@ -44,15 +38,10 @@ def setup_selenium():
     user_agent = random.choice(USER_AGENTS)
     options.add_argument(f"user-agent={user_agent}")
 
-    # Use Proxy if available
-    proxy = random.choice(PROXIES)
     driver = webdriver.Chrome(options=options)
-    driver.request_interceptor = lambda request: request.headers.update({"User-Agent": user_agent})
-    driver.proxy = {"http": proxy, "https": proxy}
-
     return driver
 
-# Scroll and load more products dynamically
+
 def scroll_and_load_more(driver, scroll_pause_time=3, max_scrolls=10):
     """Scroll down to load more products dynamically."""
     last_height = driver.execute_script("return document.body.scrollHeight")
@@ -64,46 +53,41 @@ def scroll_and_load_more(driver, scroll_pause_time=3, max_scrolls=10):
             break
         last_height = new_height
 
-# Scrape Bestsellers using BeautifulSoup
+
 def scrape_bestsellers():
     """Scrapes Amazon Bestsellers using BeautifulSoup."""
-    response = requests.get(URLS["Bestseller"], headers={'User-Agent': random.choice(USER_AGENTS)})
-    soup = BeautifulSoup(response.text, 'html.parser')
+    response = requests.get(URLS["Bestseller"], headers={"User-Agent": random.choice(USER_AGENTS)})
+    soup = BeautifulSoup(response.text, "html.parser")
 
-    items = soup.select(".p13n-sc-uncoverable-faceout") or \
-            soup.select("li.zg-item-immersion") or \
-            soup.select("div.zg-grid-general-faceout")
+    items = soup.select(".p13n-sc-uncoverable-faceout, li.zg-item-immersion, div.zg-grid-general-faceout")
 
     products = []
     for item in items:
-        title = item.select_one(".p13n-sc-truncate-desktop-type2") or \
-                item.select_one(".p13n-sc-truncated") or \
-                item.select_one("._cDEzb_p13n-sc-css-line-clamp-3_1Fn1y")
-
+        title = item.select_one(".p13n-sc-truncate-desktop-type2, .p13n-sc-truncated, ._cDEzb_p13n-sc-css-line-clamp-3_1Fn1y")
         link = item.select_one("a.a-link-normal")
         image = item.select_one("img")
-        price = item.select_one(".p13n-sc-price") or item.select_one("span.a-price > span.a-offscreen")
+        price = item.select_one(".p13n-sc-price, span.a-price > span.a-offscreen")
 
         price_text = price.get_text(strip=True) if price else "N/A"
-        old_price = "₹" + str(int(price_text.replace('₹', '').replace(',', '').strip()) * 2) if price_text != "N/A" else "N/A"
+        old_price = f"₹{int(price_text.replace('₹', '').replace(',', '').strip()) * 2}" if price_text != "N/A" else "N/A"
 
         if title and link and image:
             product = {
-                'title': title.get_text(strip=True),
-                'image': image['src'],
-                'price': price_text,
-                'old_price': old_price,
-                'category': "Bestseller",
-                'type': "Bestseller",
-                'link': f"https://www.amazon.in{link['href']}&tag={AFFILIATE_TAG}"
+                "title": title.get_text(strip=True),
+                "image": image["src"],
+                "price": price_text,
+                "old_price": old_price,
+                "category": "Bestseller",
+                "type": "Bestseller",
+                "link": f"https://www.amazon.in{link['href']}&tag={AFFILIATE_TAG}",
             }
             products.append(product)
 
     print(f"✅ Scraped {len(products)} Bestseller products.")
     return products
 
-# Scrape Top Deals and Price Drops using Selenium
-def scrape_deals(url, category_name, max_items=20):
+
+def scrape_deals(url, category_name, max_items=10):
     """Scrapes Top Deals and Price Drops with Selenium."""
     driver = setup_selenium()
     driver.get(url)
@@ -113,34 +97,24 @@ def scrape_deals(url, category_name, max_items=20):
     scroll_and_load_more(driver, scroll_pause_time=3, max_scrolls=5)
 
     try:
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, ".DesktopDiscountAsinGrid-module__grid_pi4xEmM7RAHNMG9sGVBJ > div"))
-        )
-    except:
-        print(f"❗ No products found for {category_name}.")
-        driver.quit()
-        return []
+        items = driver.find_elements(By.CSS_SELECTOR, ".DesktopDiscountAsinGrid-module__grid_pi4xEmM7RAHNMG9sGVBJ > div")
 
-    products = []
-    items = driver.find_elements(By.CSS_SELECTOR,
-                                 ".DesktopDiscountAsinGrid-module__grid_pi4xEmM7RAHNMG9sGVBJ > div")
+        if not items:
+            print(f"❗ No products found for {category_name}.")
+            driver.quit()
+            return []
 
-    print(f"✅ Found {len(items)} items for {category_name}.")
+        print(f"✅ Found {len(items)} items for {category_name}.")
+        products = []
 
-    for item in items[:max_items]:
-        try:
-            link_element = item.find_element(By.TAG_NAME, "a")
-            product_link = link_element.get_attribute("href")
-
-            # Fetch product page
-            driver.execute_script(f"window.open('{product_link}', '_blank');")
-            driver.switch_to.window(driver.window_handles[1])  # Switch to new tab
-            time.sleep(random.uniform(3, 5))
-
+        for item in items[:max_items]:
             try:
-                WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located((By.ID, "ppd"))
-                )
+                link_element = item.find_element(By.TAG_NAME, "a")
+                product_link = link_element.get_attribute("href")
+
+                driver.get(product_link)
+                time.sleep(3)
+
                 title = driver.find_element(By.ID, "productTitle").text.strip()
                 image = driver.find_element(By.ID, "landingImage").get_attribute("src")
 
@@ -156,31 +130,34 @@ def scrape_deals(url, category_name, max_items=20):
                     old_price = "N/A"
 
                 product_data = {
-                    'title': title,
-                    'image': image,
-                    'price': price_text,
-                    'old_price': old_price,
-                    'category': category_name,
-                    'type': category_name,
-                    'link': f"{product_link}&tag={AFFILIATE_TAG}"
+                    "title": title,
+                    "image": image,
+                    "price": price_text,
+                    "old_price": old_price,
+                    "category": category_name,
+                    "type": category_name,
+                    "link": f"{product_link}&tag={AFFILIATE_TAG}",
                 }
                 products.append(product_data)
 
+                # Go back to the deals page
+                driver.back()
+                time.sleep(2)
+
             except Exception as e:
-                print(f"⚠️ Error fetching product details: {e}")
+                print(f"⚠️ Error scraping item: {e}")
+                continue
 
-            driver.close()
-            driver.switch_to.window(driver.window_handles[0])
+        driver.quit()
+        print(f"✅ Scraped {len(products)} {category_name} products.")
+        return products
 
-        except Exception as e:
-            print(f"⚠️ Error scraping item: {e}")
-            continue
+    except Exception as e:
+        print(f"❗ Error loading {category_name}: {e}")
+        driver.quit()
+        return []
 
-    driver.quit()
-    print(f"✅ Scraped {len(products)} {category_name} products.")
-    return products
 
-# Save products to JS file
 def save_to_js(products):
     """Saves the scraped products to a JavaScript file."""
     js_content = "const products = [\n"
@@ -208,8 +185,8 @@ if __name__ == "__main__":
 
     all_products = []
     all_products.extend(scrape_bestsellers())
-    all_products.extend(scrape_deals(URLS["Top Deals"], "Top Deals", max_items=10))
-    all_products.extend(scrape_deals(URLS["Price Drops"], "Price Drops", max_items=10))
+    all_products.extend(scrape_deals(URLS["Top Deals"], "Top Deals", max_items=5))
+    all_products.extend(scrape_deals(URLS["Price Drops"], "Price Drops", max_items=5))
 
     save_to_js(all_products)
     print("🎉 Scraping and saving completed successfully.")
