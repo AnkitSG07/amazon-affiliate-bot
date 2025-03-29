@@ -53,19 +53,20 @@ def scrape_bestsellers():
         if price_text != "N/A":
             try:
                 price_number = int(price_text.replace('₹', '').replace(',', '').strip())
-                old_price = f"₹{price_number * 2}"
-                discount = f"{round(((price_number * 2 - price_number) / (price_number * 2)) * 100)}%"
+                old_price_number = int(price_number * 100 / (100 - 50))  # Estimated original price
+                old_price = f"₹{old_price_number}"
+                discount_percentage = round(((old_price_number - price_number) / old_price_number) * 100)
+                discount = f"{discount_percentage}%"
             except ValueError:
                 price_number, old_price = "N/A", "N/A"
+                discount_percentage = 0
 
         # Corrected product classification logic
         product_type = "Bestseller"
-        if discount != "0%" and price_number != "N/A":
-            discount_percentage = int(discount.replace('%', ''))
-            if discount_percentage >= 40:
-                product_type = "Price Drops"
-            elif 20 <= discount_percentage < 40:
-                product_type = "Best Deals"
+        if discount_percentage >= 80 and discount_percentage <= 90:
+            product_type = "Price Drops"  # Products with 80-90% off
+        elif 45 <= discount_percentage <= 55:
+            product_type = "Best Deals"  # Products with around 50% off
 
         # Add valid products
         if title and link and image_url:
