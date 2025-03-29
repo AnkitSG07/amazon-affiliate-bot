@@ -1,79 +1,79 @@
 import requests
 from bs4 import BeautifulSoup
 
-# URLs for different sections
+# Define URLs for each section
 AMAZON_BESTSELLER_URL = "https://www.amazon.in/gp/bestsellers"
 AMAZON_DEALS_URL = "https://www.amazon.in/gp/goldbox?ref_=nav_cs_gb"
-AMAZON_LIGHTNING_DEALS_URL = "https://www.amazon.in/gp/goldbox/ref=gbps_ftr_s-1_1f2b_page_1"
-
-# Affiliate tag
 AFFILIATE_TAG = "ankit007"
 
-def scrape_amazon(url, category_type):
-    """Scrapes Amazon URL and returns a list of product dictionaries."""
-    response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'})
-    if response.status_code != 200:
-        print(f"❌ Failed to fetch data from {url}. Status Code: {response.status_code}")
-        return []
+# Number of pages to scrape for more products
+PAGES_TO_SCRAPE = 5
 
-    soup = BeautifulSoup(response.text, 'html.parser')
-    items = soup.select(".p13n-sc-uncoverable-faceout") or \
-            soup.select("li.zg-item-immersion") or \
-            soup.select("div.zg-grid-general-faceout")
 
-    if not items:
-        print(f"❗ No products found on {url}.")
-        return []
-
+def scrape_amazon_products(url, max_pages=5):
+    """Scrapes multiple pages of Amazon products and returns a list of product dictionaries."""
     products = []
-    for item in items:
-        title = (item.select_one(".p13n-sc-truncate-desktop-type2") or
-                 item.select_one(".p13n-sc-truncated") or
-                 item.select_one("._cDEzb_p13n-sc-css-line-clamp-3_1Fn1y"))
 
-        link = item.select_one("a.a-link-normal")
-        image = item.select_one("img")
-        price = (item.select_one(".p13n-sc-price") or
-                 item.select_one("span.a-price > span.a-offscreen"))
+    for page in range(1, max_pages + 1):
+        response = requests.get(f"{url}&page={page}", headers={'User-Agent': 'Mozilla/5.0'})
+        
+        # Check for a successful response
+        if response.status_code != 200:
+            print(f"❌ Failed to fetch data from page {page}. Status Code: {response.status_code}")
+            continue
+        
+        soup = BeautifulSoup(response.text, 'html.parser')
 
-        price_text = price.get_text(strip=True) if price else "N/A"
-        category_tag = item.find_previous("h2")
-        category_text = category_tag.get_text(strip=True) if category_tag else "Miscellaneous"
+        # Multiple selectors to handle Amazon's layout changes
+        items = soup.select(".p13n-sc-uncoverable-faceout") or \
+                soup.select("li.zg-item-immersion") or \
+                soup.select("div.zg-grid-general-faceout")
 
-        # Calculate discount percentage and old price
-        old_price, discount_percentage = "N/A", 0
-        if price and price_text != "N/A":
-            try:
-                price_number = int(price_text.replace('₹', '').replace(',', '').strip())
-                old_price = f"₹{price_number * 2}"
-                discount_percentage = round(((price_number * 2 - price_number) / (price_number * 2)) * 100)
-            except ValueError:
-                price_number, old_price, discount_percentage = "N/A", "N/A", 0
+        for item in items:
+            title = (item.select_one(".p13n-sc-truncate-desktop-type2") or
+                     item.select_one(".p13n-sc-truncated") or
+                     item.select_one("._cDEzb_p13n-sc-css-line-clamp-3_1Fn1y"))
 
-        # Assign type based on source and discount
-        if category_type == "Bestseller":
+            link = item.select_one("a.a-link-normal")
+            image = item.select_one("img")
+            price = (item.select_one(".p13n-sc-price") or
+                     item.select_one("span.a-price > span.a-offscreen"))
+
+            category_tag = item.find_previous("h2")
+            category_text = category_tag.get_text(strip=True) if category_tag else "Miscellaneous"
+
+            price_text = price.get_text(strip=True) if price else "N/A"
+            old_price, discount_percentage = "N/A", 0
+            if price and price_text != "N/A":
+                try:
+                    price_number = int(price_text.replace('₹', '').replace(',', '').strip())
+                    old_price = f"₹{price_number * 2}"
+                    discount_percentage = round(((price_number * 2 - price_number) / (price_number * 2)) * 100)
+                except ValueError:
+                    price_number, old_price = "N/A", "N/A"
+
+            # Determine product type based on discount
             product_type = "Bestseller"
-        elif category_type == "Price Drop" and 80 <= discount_percentage <= 90:
-            product_type = "Price Drop"
-        elif category_type == "Best Deal" and 45 <= discount_percentage <= 55:
-            product_type = "Best Deal"
-        else:
-            continue  # Skip products that don't match the discount criteria
+            if discount_percentage >= 80 and discount_percentage <= 90:
+                product_type = "Price Drop"
+            elif discount_percentage >= 45 and discount_percentage <= 55:
+                product_type = "Best Deal"
 
-        if title and link and image:
-            product = {
-                'title': title.get_text(strip=True),
-                'image': image['src'],
-                'price': price_text,
-                'old_price': old_price,
-                'category': category_text,
-                'type': product_type,
-                'link': f"https://www.amazon.in{link['href']}&tag={AFFILIATE_TAG}"
-            }
-            products.append(product)
+            if title and link and image:
+                product = {
+                    'title': title.get_text(strip=True),
+                    'image': image['src'],
+                    'price': price_text,
+                    'old_price': old_price,
+                    'category': category_text,
+                    'type': product_type,
+                    'link': f"https://www.amazon.in{link['href']}&tag={AFFILIATE_TAG}"
+                }
+                products.append(product)
 
-    print(f"✅ Scraped {len(products)} products from {url}.")
+    print(f"✅ Scraped {len(products)} products successfully from {url}.")
     return products
+
 
 def save_to_js(products):
     """Saves the scraped products to a JavaScript file."""
@@ -95,12 +95,11 @@ def save_to_js(products):
         f.write(js_content)
     print("✅ products.js updated successfully.")
 
-# Scrape from multiple sources
-products_bestsellers = scrape_amazon(AMAZON_BESTSELLER_URL, "Bestseller")
-products_price_drops = scrape_amazon(AMAZON_DEALS_URL, "Price Drop")
-products_best_deals = scrape_amazon(AMAZON_LIGHTNING_DEALS_URL, "Best Deal")
 
-# Combine all products
-all_products = products_bestsellers + products_price_drops + products_best_deals
+# Scrape all product types and save
+bestseller_products = scrape_amazon_products(AMAZON_BESTSELLER_URL, PAGES_TO_SCRAPE)
+deal_products = scrape_amazon_products(AMAZON_DEALS_URL, PAGES_TO_SCRAPE)
+all_products = bestseller_products + deal_products
+
+# Save products to products.js
 save_to_js(all_products)
-print("🎉 Scraping and saving completed successfully.")
