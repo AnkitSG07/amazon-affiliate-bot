@@ -16,8 +16,8 @@ window.onload = function () {
 
   // Load gallery sections dynamically
   loadSection("Bestseller", "productContainerBestsellers");
+  loadSection("Top Deals", "productContainerBestDeals");
   loadSection("Price Drops", "productContainerPriceDrops");
-  loadSection("Best Deals", "productContainerBestDeals");
 
   // Hook up search
   const searchBar = document.getElementById("searchBar");
@@ -25,19 +25,6 @@ window.onload = function () {
     const searchTerm = this.value.toLowerCase();
     loadProducts("All", searchTerm);
   });
-
-  // Load blogs dynamically from blogs.json
-  fetch("blogs.json")
-    .then((res) => res.json())
-    .then((blogData) => {
-      const blogList = document.getElementById("blogList");
-      blogData.forEach((blog) => {
-        let li = document.createElement("li");
-        li.innerHTML = `<a href="${blog.link}" target="_blank">${blog.title}</a>`;
-        blogList.appendChild(li);
-      });
-    })
-    .catch((err) => console.error("Blogs load error:", err));
 };
 
 // Load products by category or search term
@@ -53,11 +40,10 @@ function loadProducts(category, searchTerm = "") {
     .forEach((prod) => addProductCard(prod, container));
 }
 
-// Load section by type (Bestseller, Price Drops, Best Deals)
+// Load section by type (Bestseller, Top Deals, Price Drops)
 function loadSection(type, containerId) {
   const container = document.getElementById(containerId);
 
-  // Check if the container exists
   if (!container) {
     console.error(`Error: Container with ID "${containerId}" not found.`);
     return;
