@@ -4,7 +4,9 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 import chromedriver_autoinstaller
 import time
+import random
 from selenium.webdriver.common.by import By
+from selenium.common.exceptions import TimeoutException
 
 # URLs for different categories
 URLS = {
@@ -15,6 +17,13 @@ URLS = {
 
 # Amazon Affiliate Tag
 AFFILIATE_TAG = "ankit007"
+
+# Maximum retries for failed page loads
+MAX_RETRIES = 3
+
+# Set delay between product page requests (to prevent blocking)
+MIN_DELAY = 3
+MAX_DELAY = 7
 
 # Setup Selenium with automatic ChromeDriver installation
 def setup_selenium():
@@ -27,7 +36,7 @@ def setup_selenium():
 
     # Create WebDriver instance
     driver = webdriver.Chrome(options=options)
-    driver.set_page_load_timeout(30)
+    driver.set_page_load_timeout(60)  # Increased page load timeout
     return driver
 
 # Scrape Bestsellers using BeautifulSoup
@@ -77,7 +86,7 @@ def scrape_bestsellers():
     return products
 
 # Scrape Top Deals and Price Drops with complete details
-def scrape_deals(url, category_name):
+def scrape_deals(url, category_name, max_items=20):
     """Scrapes Top Deals and Price Drops with full price info."""
     driver = setup_selenium()
     driver.get(url)
@@ -87,41 +96,51 @@ def scrape_deals(url, category_name):
     items = driver.find_elements(By.CSS_SELECTOR,
                                   ".DesktopDiscountAsinGrid-module__grid_pi4xEmM7RAHNMG9sGVBJ > div")
 
-    for item in items[:20]:  # Fetch up to 20 items (can be increased)
+    for item in items[:max_items]:  # Fetch up to max_items items (can be increased)
         try:
             link_element = item.find_element(By.CSS_SELECTOR, "a.a-link-normal")
             product_link = link_element.get_attribute("href")
 
-            # Visit product page to get complete info
-            driver.get(product_link)
-            time.sleep(2)  # Allow product page to load
+            # Visit product page to get complete info with retries
+            for attempt in range(MAX_RETRIES):
+                try:
+                    driver.get(product_link)
+                    time.sleep(random.uniform(MIN_DELAY, MAX_DELAY))  # Random delay
 
-            # Scrape product info from the opened product page
-            title = driver.find_element(By.ID, "productTitle").text.strip()
-            image = driver.find_element(By.CSS_SELECTOR, "#landingImage").get_attribute("src")
+                    # Scrape product info from the opened product page
+                    title = driver.find_element(By.ID, "productTitle").text.strip()
+                    image = driver.find_element(By.CSS_SELECTOR, "#landingImage").get_attribute("src")
 
-            try:
-                price = driver.find_element(By.CSS_SELECTOR, "span.a-price-whole").text.strip()
-                price_text = f"₹{price}"
-            except:
-                price_text = "N/A"
+                    try:
+                        price = driver.find_element(By.CSS_SELECTOR, "span.a-price-whole").text.strip()
+                        price_text = f"₹{price}"
+                    except:
+                        price_text = "N/A"
 
-            try:
-                old_price = driver.find_element(By.CSS_SELECTOR, "span.a-price.a-text-price span.a-offscreen").text.strip()
-            except:
-                old_price = "N/A"
+                    try:
+                        old_price = driver.find_element(By.CSS_SELECTOR,
+                                                        "span.a-price.a-text-price span.a-offscreen").text.strip()
+                    except:
+                        old_price = "N/A"
 
-            if title and product_link and image:
-                product = {
-                    'title': title,
-                    'image': image,
-                    'price': price_text,
-                    'old_price': old_price,
-                    'category': category_name,
-                    'type': category_name,
-                    'link': f"{product_link}&tag={AFFILIATE_TAG}"
-                }
-                products.append(product)
+                    if title and product_link and image:
+                        product = {
+                            'title': title,
+                            'image': image,
+                            'price': price_text,
+                            'old_price': old_price,
+                            'category': category_name,
+                            'type': category_name,
+                            'link': f"{product_link}&tag={AFFILIATE_TAG}"
+                        }
+                        products.append(product)
+
+                    break  # Break loop if successful
+                except TimeoutException:
+                    print(f"⚠️ Timeout for {product_link}. Retrying ({attempt + 1}/{MAX_RETRIES})...")
+                    if attempt == MAX_RETRIES - 1:
+                        print(f"❌ Failed to load {product_link} after {MAX_RETRIES} attempts.")
+                        continue
 
         except Exception as e:
             continue
