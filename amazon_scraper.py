@@ -2,7 +2,7 @@ import time
 import random
 import requests
 from bs4 import BeautifulSoup
-from selenium import webdriver
+from seleniumwire import webdriver  # Use selenium-wire for proxy rotation
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -18,19 +18,42 @@ URLS = {
 # Affiliate tag for adding affiliate links
 AFFILIATE_TAG = "ankit007"
 
-# Setup Selenium for scraping
+# User-Agent List to Rotate
+USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.83 Safari/537.36",
+]
+
+# Proxies List (Optional - To Avoid IP Blocking)
+PROXIES = [
+    "http://username:password@proxy1.com:8080",
+    "http://username:password@proxy2.com:8080",
+]
+
+# Setup Selenium for scraping with rotating proxies and user-agent
 def setup_selenium():
-    """Sets up headless Chrome driver."""
+    """Sets up headless Chrome driver with rotating user-agent."""
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920,1080")
+
+    # Rotate User-Agent
+    user_agent = random.choice(USER_AGENTS)
+    options.add_argument(f"user-agent={user_agent}")
+
+    # Use Proxy if available
+    proxy = random.choice(PROXIES)
     driver = webdriver.Chrome(options=options)
+    driver.request_interceptor = lambda request: request.headers.update({"User-Agent": user_agent})
+    driver.proxy = {"http": proxy, "https": proxy}
+
     return driver
 
 # Scroll and load more products dynamically
-def scroll_and_load_more(driver, scroll_pause_time=2, max_scrolls=10):
+def scroll_and_load_more(driver, scroll_pause_time=3, max_scrolls=10):
     """Scroll down to load more products dynamically."""
     last_height = driver.execute_script("return document.body.scrollHeight")
     for _ in range(max_scrolls):
@@ -44,7 +67,7 @@ def scroll_and_load_more(driver, scroll_pause_time=2, max_scrolls=10):
 # Scrape Bestsellers using BeautifulSoup
 def scrape_bestsellers():
     """Scrapes Amazon Bestsellers using BeautifulSoup."""
-    response = requests.get(URLS["Bestseller"], headers={'User-Agent': 'Mozilla/5.0'})
+    response = requests.get(URLS["Bestseller"], headers={'User-Agent': random.choice(USER_AGENTS)})
     soup = BeautifulSoup(response.text, 'html.parser')
 
     items = soup.select(".p13n-sc-uncoverable-faceout") or \
@@ -79,55 +102,15 @@ def scrape_bestsellers():
     print(f"✅ Scraped {len(products)} Bestseller products.")
     return products
 
-# Open product page and extract data using XPath
-def extract_product_details(driver, product_link):
-    """Extract product details by opening product page in a new tab."""
-    driver.execute_script(f"window.open('{product_link}', '_blank');")
-    driver.switch_to.window(driver.window_handles[1])  # Switch to new tab
-    time.sleep(random.uniform(3, 5))  # Wait for the page to load
-
-    try:
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.XPATH, '//*[@id="ppd"]'))
-        )
-        title = driver.find_element(By.ID, "productTitle").text.strip()
-        image = driver.find_element(By.ID, "landingImage").get_attribute("src")
-
-        try:
-            price = driver.find_element(By.CSS_SELECTOR, "span.a-price-whole").text.strip()
-            price_text = f"₹{price}"
-        except:
-            price_text = "N/A"
-
-        try:
-            old_price = driver.find_element(By.CSS_SELECTOR, "span.a-price.a-text-price span.a-offscreen").text.strip()
-        except:
-            old_price = "N/A"
-
-        product_data = {
-            'title': title,
-            'image': image,
-            'price': price_text,
-            'old_price': old_price
-        }
-
-    except Exception as e:
-        print(f"⚠️ Error fetching product details: {e}")
-        product_data = None
-
-    driver.close()
-    driver.switch_to.window(driver.window_handles[0])  # Return to main tab
-    return product_data
-
 # Scrape Top Deals and Price Drops using Selenium
-def scrape_deals(url, category_name, max_items=30):
+def scrape_deals(url, category_name, max_items=20):
     """Scrapes Top Deals and Price Drops with Selenium."""
     driver = setup_selenium()
     driver.get(url)
     time.sleep(5)
 
     # Scroll to load more content dynamically
-    scroll_and_load_more(driver, scroll_pause_time=3, max_scrolls=10)
+    scroll_and_load_more(driver, scroll_pause_time=3, max_scrolls=5)
 
     try:
         WebDriverWait(driver, 10).until(
@@ -144,21 +127,50 @@ def scrape_deals(url, category_name, max_items=30):
 
     print(f"✅ Found {len(items)} items for {category_name}.")
 
-    for item in items[:max_items]:  # Limit to max_items to avoid timeouts
+    for item in items[:max_items]:
         try:
-            link_element = item.find_element(By.TAG_NAME, "a")  # Fetch first <a> tag
+            link_element = item.find_element(By.TAG_NAME, "a")
             product_link = link_element.get_attribute("href")
 
-            # Open product page to fetch price and details
-            product_data = extract_product_details(driver, product_link)
+            # Fetch product page
+            driver.execute_script(f"window.open('{product_link}', '_blank');")
+            driver.switch_to.window(driver.window_handles[1])  # Switch to new tab
+            time.sleep(random.uniform(3, 5))
 
-            if product_data:
-                product_data.update({
+            try:
+                WebDriverWait(driver, 10).until(
+                    EC.presence_of_element_located((By.ID, "ppd"))
+                )
+                title = driver.find_element(By.ID, "productTitle").text.strip()
+                image = driver.find_element(By.ID, "landingImage").get_attribute("src")
+
+                try:
+                    price = driver.find_element(By.CSS_SELECTOR, "span.a-price-whole").text.strip()
+                    price_text = f"₹{price}"
+                except:
+                    price_text = "N/A"
+
+                try:
+                    old_price = driver.find_element(By.CSS_SELECTOR, "span.a-price.a-text-price span.a-offscreen").text.strip()
+                except:
+                    old_price = "N/A"
+
+                product_data = {
+                    'title': title,
+                    'image': image,
+                    'price': price_text,
+                    'old_price': old_price,
                     'category': category_name,
                     'type': category_name,
                     'link': f"{product_link}&tag={AFFILIATE_TAG}"
-                })
+                }
                 products.append(product_data)
+
+            except Exception as e:
+                print(f"⚠️ Error fetching product details: {e}")
+
+            driver.close()
+            driver.switch_to.window(driver.window_handles[0])
 
         except Exception as e:
             print(f"⚠️ Error scraping item: {e}")
@@ -196,8 +208,8 @@ if __name__ == "__main__":
 
     all_products = []
     all_products.extend(scrape_bestsellers())
-    all_products.extend(scrape_deals(URLS["Top Deals"], "Top Deals", max_items=20))
-    all_products.extend(scrape_deals(URLS["Price Drops"], "Price Drops", max_items=20))
+    all_products.extend(scrape_deals(URLS["Top Deals"], "Top Deals", max_items=10))
+    all_products.extend(scrape_deals(URLS["Price Drops"], "Price Drops", max_items=10))
 
     save_to_js(all_products)
     print("🎉 Scraping and saving completed successfully.")
