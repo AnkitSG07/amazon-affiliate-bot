@@ -18,7 +18,7 @@ AFFILIATE_TAG = "ankit007"
 
 # Setup Selenium with automatic ChromeDriver installation
 def setup_selenium():
-    """Set up Selenium with ChromeDriver and headless mode"""
+    """Set up Selenium with ChromeDriver and headless mode."""
     # Automatically install the correct version of ChromeDriver
     chromedriver_autoinstaller.install()
 
@@ -59,7 +59,7 @@ def scrape_bestsellers():
         image = item.select_one("img")
         price = (item.select_one(".p13n-sc-price") or
                  item.select_one("span.a-price > span.a-offscreen"))
-        
+
         price_text = price.get_text(strip=True) if price else "N/A"
         link_href = f"https://www.amazon.in{link['href']}&tag={AFFILIATE_TAG}" if link else "#"
 
@@ -78,9 +78,9 @@ def scrape_bestsellers():
     print(f"✅ Scraped {len(products)} Bestseller products.")
     return products
 
-# Scrape Top Deals and Price Drops using Selenium
-def scrape_selenium(url, category_name, discount_range):
-    """Scrapes Amazon Deals using Selenium"""
+# Scrape Top Deals and Price Drops using Selenium (Open Product Page)
+def scrape_deals(url, category_name, discount_range):
+    """Scrapes Top Deals and Price Drops dynamically from deal pages."""
     driver = setup_selenium()
     driver.get(url)
     time.sleep(5)  # Give page time to load
@@ -90,22 +90,49 @@ def scrape_selenium(url, category_name, discount_range):
 
     for item in items:
         try:
-            title = item.find_element(By.CSS_SELECTOR, "span.a-text-normal").text
+            # Extract link and open product page
             link = item.find_element(By.CSS_SELECTOR, "a.a-link-normal").get_attribute("href")
-            image = item.find_element(By.CSS_SELECTOR, "img").get_attribute("src")
-            discount_text = item.find_element(By.CSS_SELECTOR, "span.a-price > span.a-offscreen").text
+            if not link:
+                continue
 
-            # Extract price
-            price_text = discount_text if discount_text else "N/A"
-            old_price = "N/A"
-            discount_percentage = int(item.find_element(By.CSS_SELECTOR, "span.a-size-base").text.replace("%", "").strip())
-            
+            driver.get(link)  # Open product page
+            time.sleep(3)
+
+            # Extract title, price, old price, and discount percentage
+            try:
+                title = driver.find_element(By.ID, "productTitle").text.strip()
+            except:
+                title = "N/A"
+
+            try:
+                price_element = driver.find_element(By.CSS_SELECTOR, "span.a-price > span.a-offscreen")
+                price_text = price_element.text.strip()
+            except:
+                price_text = "N/A"
+
+            try:
+                old_price_element = driver.find_element(By.CSS_SELECTOR, "span.priceBlockStrikePriceString")
+                old_price = old_price_element.text.strip()
+            except:
+                old_price = "N/A"
+
+            # Calculate discount percentage
+            if price_text != "N/A" and old_price != "N/A":
+                try:
+                    price_number = float(price_text.replace('₹', '').replace(',', '').strip())
+                    old_price_number = float(old_price.replace('₹', '').replace(',', '').strip())
+                    discount_percentage = round(((old_price_number - price_number) / old_price_number) * 100)
+                except ValueError:
+                    discount_percentage = 0
+            else:
+                discount_percentage = 0
+
             # Categorize based on discount percentage
             if discount_range[0] <= discount_percentage <= discount_range[1]:
                 product_type = category_name
                 product = {
                     'title': title,
-                    'image': image,
+                    'image': driver.find_element(By.CSS_SELECTOR, "img#landingImage").get_attribute("src"),
                     'price': price_text,
                     'old_price': old_price,
                     'category': category_name,
@@ -113,6 +140,7 @@ def scrape_selenium(url, category_name, discount_range):
                     'link': f"{link}&tag={AFFILIATE_TAG}"
                 }
                 products.append(product)
+
         except Exception as e:
             continue
 
@@ -146,8 +174,8 @@ if __name__ == "__main__":
 
     all_products = []
     all_products.extend(scrape_bestsellers())
-    all_products.extend(scrape_selenium(URLS["Top Deal"], "Top Deals", (50, 60)))  # 50-60% for Top Deals
-    all_products.extend(scrape_selenium(URLS["Price Drop"], "Price Drops", (80, 90)))  # 80-90% for Price Drops
+    all_products.extend(scrape_deals(URLS["Top Deal"], "Top Deals", (50, 60)))  # 50-60% for Top Deals
+    all_products.extend(scrape_deals(URLS["Price Drop"], "Price Drops", (80, 90)))  # 80-90% for Price Drops
 
     if all_products:
         save_to_js(all_products)
