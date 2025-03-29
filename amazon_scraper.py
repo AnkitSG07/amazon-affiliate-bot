@@ -76,9 +76,9 @@ def scrape_bestsellers():
     print(f"✅ Scraped {len(products)} Bestseller products.")
     return products
 
-# Scrape Top Deals and Price Drops dynamically with Selenium
+# Scrape Top Deals and Price Drops with complete details
 def scrape_deals(url, category_name):
-    """Scrapes Top Deals and Price Drops dynamically without discount filter."""
+    """Scrapes Top Deals and Price Drops with full price info."""
     driver = setup_selenium()
     driver.get(url)
     time.sleep(5)  # Allow time for the page to load
@@ -87,46 +87,41 @@ def scrape_deals(url, category_name):
     items = driver.find_elements(By.CSS_SELECTOR,
                                   ".DesktopDiscountAsinGrid-module__grid_pi4xEmM7RAHNMG9sGVBJ > div")
 
-    for item in items:
+    for item in items[:20]:  # Fetch up to 20 items (can be increased)
         try:
-            # Find product link
-            link = item.find_element(By.CSS_SELECTOR, "a.a-link-normal").get_attribute("href")
-            if not link:
-                continue
+            link_element = item.find_element(By.CSS_SELECTOR, "a.a-link-normal")
+            product_link = link_element.get_attribute("href")
 
-            # Open product page for more details
-            driver.get(link)
-            time.sleep(3)
+            # Visit product page to get complete info
+            driver.get(product_link)
+            time.sleep(2)  # Allow product page to load
 
-            # Extract title, price, old price, and discount
-            try:
-                title = driver.find_element(By.ID, "productTitle").text.strip()
-            except:
-                title = "N/A"
+            # Scrape product info from the opened product page
+            title = driver.find_element(By.ID, "productTitle").text.strip()
+            image = driver.find_element(By.CSS_SELECTOR, "#landingImage").get_attribute("src")
 
             try:
-                price_element = driver.find_element(By.CSS_SELECTOR, "span.a-price > span.a-offscreen")
-                price_text = price_element.text.strip()
+                price = driver.find_element(By.CSS_SELECTOR, "span.a-price-whole").text.strip()
+                price_text = f"₹{price}"
             except:
                 price_text = "N/A"
 
             try:
-                old_price_element = driver.find_element(By.CSS_SELECTOR, "span.priceBlockStrikePriceString")
-                old_price = old_price_element.text.strip()
+                old_price = driver.find_element(By.CSS_SELECTOR, "span.a-price.a-text-price span.a-offscreen").text.strip()
             except:
                 old_price = "N/A"
 
-            # Add product without filtering by discount
-            product = {
-                'title': title,
-                'image': driver.find_element(By.CSS_SELECTOR, "img#landingImage").get_attribute("src"),
-                'price': price_text,
-                'old_price': old_price,
-                'category': category_name,
-                'type': category_name,
-                'link': f"{link}&tag={AFFILIATE_TAG}"
-            }
-            products.append(product)
+            if title and product_link and image:
+                product = {
+                    'title': title,
+                    'image': image,
+                    'price': price_text,
+                    'old_price': old_price,
+                    'category': category_name,
+                    'type': category_name,
+                    'link': f"{product_link}&tag={AFFILIATE_TAG}"
+                }
+                products.append(product)
 
         except Exception as e:
             continue
