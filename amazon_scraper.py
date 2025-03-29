@@ -2,9 +2,9 @@ import requests
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
 import chromedriver_autoinstaller
 import time
+from selenium.webdriver.common.by import By
 
 # URLs for different categories
 URLS = {
@@ -77,8 +77,8 @@ def scrape_bestsellers():
     return products
 
 # Scrape Top Deals and Price Drops dynamically with Selenium
-def scrape_deals(url, category_name, discount_range):
-    """Scrapes Top Deals and Price Drops dynamically by opening product pages."""
+def scrape_deals(url, category_name):
+    """Scrapes Top Deals and Price Drops dynamically without discount filter."""
     driver = setup_selenium()
     driver.get(url)
     time.sleep(5)  # Allow time for the page to load
@@ -116,30 +116,17 @@ def scrape_deals(url, category_name, discount_range):
             except:
                 old_price = "N/A"
 
-            # Calculate discount percentage
-            if price_text != "N/A" and old_price != "N/A":
-                try:
-                    price_number = float(price_text.replace('₹', '').replace(',', '').strip())
-                    old_price_number = float(old_price.replace('₹', '').replace(',', '').strip())
-                    discount_percentage = round(((old_price_number - price_number) / old_price_number) * 100)
-                except ValueError:
-                    discount_percentage = 0
-            else:
-                discount_percentage = 0
-
-            # Classify as Top Deal or Price Drop
-            if discount_range[0] <= discount_percentage <= discount_range[1]:
-                product_type = category_name
-                product = {
-                    'title': title,
-                    'image': driver.find_element(By.CSS_SELECTOR, "img#landingImage").get_attribute("src"),
-                    'price': price_text,
-                    'old_price': old_price,
-                    'category': category_name,
-                    'type': product_type,
-                    'link': f"{link}&tag={AFFILIATE_TAG}"
-                }
-                products.append(product)
+            # Add product without filtering by discount
+            product = {
+                'title': title,
+                'image': driver.find_element(By.CSS_SELECTOR, "img#landingImage").get_attribute("src"),
+                'price': price_text,
+                'old_price': old_price,
+                'category': category_name,
+                'type': category_name,
+                'link': f"{link}&tag={AFFILIATE_TAG}"
+            }
+            products.append(product)
 
         except Exception as e:
             continue
@@ -174,8 +161,8 @@ if __name__ == "__main__":
 
     all_products = []
     all_products.extend(scrape_bestsellers())
-    all_products.extend(scrape_deals(URLS["Top Deal"], "Top Deals", (50, 60)))  # 50-60% for Top Deals
-    all_products.extend(scrape_deals(URLS["Price Drop"], "Price Drops", (80, 90)))  # 80-90% for Price Drops
+    all_products.extend(scrape_deals(URLS["Top Deal"], "Top Deals"))
+    all_products.extend(scrape_deals(URLS["Price Drop"], "Price Drops"))
 
     if all_products:
         save_to_js(all_products)
