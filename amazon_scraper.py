@@ -29,7 +29,7 @@ def setup_selenium():
     driver = webdriver.Chrome(options=options)
     return driver
 
-# Scroll and load more products for infinite scroll pages
+# Scroll and load more products dynamically
 def scroll_and_load_more(driver, scroll_pause_time=2, max_scrolls=10):
     """Scroll down to load more products dynamically."""
     last_height = driver.execute_script("return document.body.scrollHeight")
@@ -79,15 +79,55 @@ def scrape_bestsellers():
     print(f"✅ Scraped {len(products)} Bestseller products.")
     return products
 
+# Open product page and extract data using XPath
+def extract_product_details(driver, product_link):
+    """Extract product details by opening product page in a new tab."""
+    driver.execute_script(f"window.open('{product_link}', '_blank');")
+    driver.switch_to.window(driver.window_handles[1])  # Switch to new tab
+    time.sleep(random.uniform(3, 5))  # Wait for the page to load
+
+    try:
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, '//*[@id="ppd"]'))
+        )
+        title = driver.find_element(By.ID, "productTitle").text.strip()
+        image = driver.find_element(By.ID, "landingImage").get_attribute("src")
+
+        try:
+            price = driver.find_element(By.CSS_SELECTOR, "span.a-price-whole").text.strip()
+            price_text = f"₹{price}"
+        except:
+            price_text = "N/A"
+
+        try:
+            old_price = driver.find_element(By.CSS_SELECTOR, "span.a-price.a-text-price span.a-offscreen").text.strip()
+        except:
+            old_price = "N/A"
+
+        product_data = {
+            'title': title,
+            'image': image,
+            'price': price_text,
+            'old_price': old_price
+        }
+
+    except Exception as e:
+        print(f"⚠️ Error fetching product details: {e}")
+        product_data = None
+
+    driver.close()
+    driver.switch_to.window(driver.window_handles[0])  # Return to main tab
+    return product_data
+
 # Scrape Top Deals and Price Drops using Selenium
-def scrape_deals(url, category_name, max_items=50):
+def scrape_deals(url, category_name, max_items=30):
     """Scrapes Top Deals and Price Drops with Selenium."""
     driver = setup_selenium()
     driver.get(url)
     time.sleep(5)
 
     # Scroll to load more content dynamically
-    scroll_and_load_more(driver, scroll_pause_time=3, max_scrolls=15)
+    scroll_and_load_more(driver, scroll_pause_time=3, max_scrolls=10)
 
     try:
         WebDriverWait(driver, 10).until(
@@ -110,34 +150,16 @@ def scrape_deals(url, category_name, max_items=50):
             product_link = link_element.get_attribute("href")
 
             # Open product page to fetch price and details
-            driver.get(product_link)
-            time.sleep(random.uniform(3, 6))  # Random delay to prevent blocking
+            product_data = extract_product_details(driver, product_link)
 
-            title = driver.find_element(By.ID, "productTitle").text.strip()
-            image = driver.find_element(By.CSS_SELECTOR, "#landingImage").get_attribute("src")
-
-            try:
-                price = driver.find_element(By.CSS_SELECTOR, "span.a-price-whole").text.strip()
-                price_text = f"₹{price}"
-            except:
-                price_text = "N/A"
-
-            try:
-                old_price = driver.find_element(By.CSS_SELECTOR, "span.a-price.a-text-price span.a-offscreen").text.strip()
-            except:
-                old_price = "N/A"
-
-            if title and product_link and image:
-                product = {
-                    'title': title,
-                    'image': image,
-                    'price': price_text,
-                    'old_price': old_price,
+            if product_data:
+                product_data.update({
                     'category': category_name,
                     'type': category_name,
                     'link': f"{product_link}&tag={AFFILIATE_TAG}"
-                }
-                products.append(product)
+                })
+                products.append(product_data)
+
         except Exception as e:
             print(f"⚠️ Error scraping item: {e}")
             continue
@@ -174,8 +196,8 @@ if __name__ == "__main__":
 
     all_products = []
     all_products.extend(scrape_bestsellers())
-    all_products.extend(scrape_deals(URLS["Top Deals"], "Top Deals", max_items=30))
-    all_products.extend(scrape_deals(URLS["Price Drops"], "Price Drops", max_items=30))
+    all_products.extend(scrape_deals(URLS["Top Deals"], "Top Deals", max_items=20))
+    all_products.extend(scrape_deals(URLS["Price Drops"], "Price Drops", max_items=20))
 
     save_to_js(all_products)
     print("🎉 Scraping and saving completed successfully.")
