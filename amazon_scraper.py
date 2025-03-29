@@ -1,30 +1,39 @@
 import requests
 from bs4 import BeautifulSoup
+import time
+import random
 
-# Define URLs for each section
+# Amazon URLs for different categories
 AMAZON_BESTSELLER_URL = "https://www.amazon.in/gp/bestsellers"
-AMAZON_DEALS_URL = "https://www.amazon.in/gp/goldbox?ref_=nav_cs_gb"
+AMAZON_TOP_DEALS_URL = "https://www.amazon.in/deals"
+AMAZON_PRICE_DROPS_URL = "https://www.amazon.in/gp/goldbox?ref_=nav_cs_gb"
+
 AFFILIATE_TAG = "ankit007"
+PAGES_TO_SCRAPE = 5  # Scrape multiple pages to get more products
 
-# Number of pages to scrape for more products
-PAGES_TO_SCRAPE = 5
+# User agents to rotate (avoid getting blocked)
+USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
+    "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
+]
 
 
-def scrape_amazon_products(url, max_pages=5):
+def scrape_amazon_products(url, category_name, max_pages=5):
     """Scrapes multiple pages of Amazon products and returns a list of product dictionaries."""
     products = []
 
     for page in range(1, max_pages + 1):
-        response = requests.get(f"{url}&page={page}", headers={'User-Agent': 'Mozilla/5.0'})
-        
-        # Check for a successful response
+        headers = {'User-Agent': random.choice(USER_AGENTS)}
+        response = requests.get(f"{url}?pg={page}", headers=headers)
+
         if response.status_code != 200:
-            print(f"❌ Failed to fetch data from page {page}. Status Code: {response.status_code}")
+            print(f"❌ Failed to fetch data from {url}, page {page}. Status Code: {response.status_code}")
             continue
-        
+
         soup = BeautifulSoup(response.text, 'html.parser')
 
-        # Multiple selectors to handle Amazon's layout changes
+        # Selectors to handle layout changes
         items = soup.select(".p13n-sc-uncoverable-faceout") or \
                 soup.select("li.zg-item-immersion") or \
                 soup.select("div.zg-grid-general-faceout")
@@ -40,7 +49,7 @@ def scrape_amazon_products(url, max_pages=5):
                      item.select_one("span.a-price > span.a-offscreen"))
 
             category_tag = item.find_previous("h2")
-            category_text = category_tag.get_text(strip=True) if category_tag else "Miscellaneous"
+            category_text = category_tag.get_text(strip=True) if category_tag else category_name
 
             price_text = price.get_text(strip=True) if price else "N/A"
             old_price, discount_percentage = "N/A", 0
@@ -52,11 +61,11 @@ def scrape_amazon_products(url, max_pages=5):
                 except ValueError:
                     price_number, old_price = "N/A", "N/A"
 
-            # Determine product type based on discount
+            # Define product type based on URL and discount
             product_type = "Bestseller"
-            if discount_percentage >= 80 and discount_percentage <= 90:
+            if url == AMAZON_PRICE_DROPS_URL and 80 <= discount_percentage <= 90:
                 product_type = "Price Drop"
-            elif discount_percentage >= 45 and discount_percentage <= 55:
+            elif url == AMAZON_TOP_DEALS_URL and 45 <= discount_percentage <= 55:
                 product_type = "Best Deal"
 
             if title and link and image:
@@ -70,6 +79,9 @@ def scrape_amazon_products(url, max_pages=5):
                     'link': f"https://www.amazon.in{link['href']}&tag={AFFILIATE_TAG}"
                 }
                 products.append(product)
+
+        # Delay to avoid being blocked by Amazon
+        time.sleep(random.uniform(2, 5))
 
     print(f"✅ Scraped {len(products)} products successfully from {url}.")
     return products
@@ -96,10 +108,13 @@ def save_to_js(products):
     print("✅ products.js updated successfully.")
 
 
-# Scrape all product types and save
-bestseller_products = scrape_amazon_products(AMAZON_BESTSELLER_URL, PAGES_TO_SCRAPE)
-deal_products = scrape_amazon_products(AMAZON_DEALS_URL, PAGES_TO_SCRAPE)
-all_products = bestseller_products + deal_products
+# Scrape from all sources and combine results
+bestseller_products = scrape_amazon_products(AMAZON_BESTSELLER_URL, "Bestsellers", PAGES_TO_SCRAPE)
+top_deals_products = scrape_amazon_products(AMAZON_TOP_DEALS_URL, "Top Deals", PAGES_TO_SCRAPE)
+price_drop_products = scrape_amazon_products(AMAZON_PRICE_DROPS_URL, "Price Drops", PAGES_TO_SCRAPE)
+
+# Merge all products
+all_products = bestseller_products + top_deals_products + price_drop_products
 
 # Save products to products.js
 save_to_js(all_products)
