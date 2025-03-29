@@ -1,119 +1,101 @@
 import requests
 from bs4 import BeautifulSoup
-import random
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
 import time
 
-# Amazon URLs - Using correct URLs now
+AFFILIATE_TAG = "ankit007"
+
+# URL Definitions
 URLS = {
     "Bestseller": "https://www.amazon.in/gp/bestsellers",
-    "Top Deals": "https://www.amazon.in/deals?ref_=nav_cs_gb",
-    "Price Drops": "https://www.amazon.in/gp/goldbox?ref_=nav_cs_gb"
+    "TopDeals": "https://www.amazon.in/deals?ref_=nav_cs_gb",
+    "PriceDrops": "https://www.amazon.in/gp/goldbox?ref_=nav_cs_gb&rh=p_n_pct-off-with"
 }
 
-AFFILIATE_TAG = "ankit007"
-PAGES_TO_SCRAPE = 5  # Scrape up to 5 pages for Top Deals and Price Drops
+def setup_selenium():
+    """Set up Selenium Chrome Driver for headless browsing."""
+    options = Options()
+    options.add_argument('--headless')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--disable-gpu')
+    driver = webdriver.Chrome(options=options)
+    return driver
 
-# List of User Agents to rotate between (avoiding 503 errors)
-USER_AGENTS = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537",
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.96 Safari/537",
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 13_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Mobile/15E148 Safari/604",
-]
+def scrape_bestsellers():
+    """Scrape bestsellers using BeautifulSoup."""
+    response = requests.get(URLS["Bestseller"], headers={'User-Agent': 'Mozilla/5.0'})
+    soup = BeautifulSoup(response.text, 'html.parser')
 
-
-def get_random_headers():
-    """Get random headers with rotating User-Agent."""
-    return {"User-Agent": random.choice(USER_AGENTS)}
-
-
-def scrape_category(url, category_name, max_pages=1):
-    """Scrape Amazon category products."""
+    items = soup.select(".p13n-sc-uncoverable-faceout")
     products = []
+    for item in items:
+        title = item.select_one(".p13n-sc-truncate-desktop-type2, .p13n-sc-truncated, ._cDEzb_p13n-sc-css-line-clamp-3_1Fn1y")
+        link = item.select_one("a.a-link-normal")
+        image = item.select_one("img")
+        price = item.select_one(".p13n-sc-price, span.a-price > span.a-offscreen")
 
-    for page in range(1, max_pages + 1):
-        page_url = f"{url}&page={page}" if page > 1 else url
-        for attempt in range(3):  # Retry up to 3 times
-            response = requests.get(page_url, headers=get_random_headers())
+        if title and link and image:
+            product = {
+                'title': title.get_text(strip=True),
+                'image': image['src'],
+                'price': price.get_text(strip=True) if price else "N/A",
+                'link': f"https://www.amazon.in{link['href']}&tag={AFFILIATE_TAG}",
+                'category': "Bestseller",
+                'type': "Bestseller"
+            }
+            products.append(product)
 
-            # Retry if 503 error (rate-limited)
-            if response.status_code == 503:
-                print(f"⚠️ 503 error encountered. Retrying in 5 seconds...")
-                time.sleep(5)
-                continue
+    return products
 
-            if response.status_code != 200:
-                print(f"❌ Failed to fetch data from {url}, page {page}. Status Code: {response.status_code}")
-                break
+def scrape_deals(driver, category, url, discount_threshold):
+    """Scrape dynamically loaded deals using Selenium."""
+    driver.get(url)
+    time.sleep(5)  # Allow time for JS to load
 
-            soup = BeautifulSoup(response.text, "html.parser")
+    products = []
+    items = driver.find_elements(By.CSS_SELECTOR, '[data-component-type="s-search-result"]')
+    for item in items:
+        try:
+            title_elem = item.find_element(By.CSS_SELECTOR, 'h2 a span')
+            link_elem = item.find_element(By.CSS_SELECTOR, 'h2 a')
+            image_elem = item.find_element(By.CSS_SELECTOR, 'img')
+            price_elem = item.find_element(By.CSS_SELECTOR, '.a-price .a-offscreen')
 
-            # Correct Selectors for Bestsellers (No Changes Here)
-            if category_name == "Bestseller":
-                items = soup.select(".p13n-sc-uncoverable-faceout") or \
-                        soup.select("li.zg-item-immersion") or \
-                        soup.select("div.zg-grid-general-faceout")
+            title = title_elem.text
+            link = f"https://www.amazon.in{link_elem.get_attribute('href')}&tag={AFFILIATE_TAG}"
+            image = image_elem.get_attribute('src')
+            price_text = price_elem.text.replace('₹', '').replace(',', '')
 
-            # Corrected Selectors for Top Deals & Price Drops
-            elif category_name == "Top Deals" or category_name == "Price Drops":
-                items = soup.select("div.a-section.a-spacing-none.puis-padding-right-small") or \
-                        soup.select("div.s-main-slot.s-result-list.s-search-results.sg-row > div")
+            if price_text.isdigit():
+                price = int(price_text)
+                old_price = price * 2
+                discount = int(((old_price - price) / old_price) * 100)
 
-            if not items:
-                print(f"❗ No products found for {category_name} on page {page}.")
-                continue
-
-            for item in items:
-                title = item.select_one(".p13n-sc-truncate-desktop-type2") or \
-                        item.select_one(".p13n-sc-truncated") or \
-                        item.select_one("h2.a-size-mini.a-spacing-none.a-color-base.s-line-clamp-2")
-
-                link = item.select_one("a.a-link-normal")
-                image = item.select_one("img")
-                price = item.select_one(".p13n-sc-price") or item.select_one("span.a-price > span.a-offscreen")
-                price_text = price.get_text(strip=True) if price else "N/A"
-
-                if not title or not link or not image:
-                    continue
-
-                # Calculate old price and discount percentage
-                old_price, discount_percentage = "N/A", 0
-                try:
-                    if price_text != "N/A":
-                        price_number = int(price_text.replace("₹", "").replace(",", "").strip())
-                        old_price = f"₹{price_number * 2}"  # Estimate old price by doubling the price
-                        discount_percentage = round(((price_number * 2 - price_number) / (price_number * 2)) * 100)
-                except (ValueError, TypeError):
-                    price_number, discount_percentage = "N/A", 0
-
-                # Assign correct product type based on discount
-                product_type = "Bestseller"
-                if isinstance(discount_percentage, (int, float)):
-                    if discount_percentage >= 80:
-                        product_type = "Price Drops"
-                    elif discount_percentage >= 50:
-                        product_type = "Top Deals"
+                product_type = "N/A"
+                if discount >= discount_threshold:
+                    product_type = category
 
                 product = {
-                    "title": title.get_text(strip=True),
-                    "image": image["src"],
-                    "price": price_text,
-                    "old_price": old_price,
-                    "category": category_name,
-                    "type": product_type,
-                    "link": f"https://www.amazon.in{link['href']}&tag={AFFILIATE_TAG}"
+                    'title': title,
+                    'image': image,
+                    'price': f"₹{price}",
+                    'old_price': f"₹{old_price}",
+                    'category': category,
+                    'type': product_type,
+                    'link': link,
                 }
                 products.append(product)
 
-            # Add delay to avoid rate-limiting
-            time.sleep(random.uniform(5, 10))
+        except Exception as e:
+            continue
 
-    print(f"✅ Scraped {len(products)} products successfully from {url}.")
     return products
 
-
 def save_to_js(products):
-    """Saves the scraped products to a JavaScript file."""
+    """Save scraped products to products.js."""
     js_content = "const products = [\n"
     for p in products:
         js_content += f"""    {{
@@ -136,17 +118,21 @@ def save_to_js(products):
 if __name__ == "__main__":
     print("🚀 Scraping Amazon Bestsellers, Top Deals, and Price Drops...")
 
-    all_products = []
-    
-    # Scrape 3 pages for Bestsellers (No changes here)
-    all_products.extend(scrape_category(URLS["Bestseller"], "Bestseller", 3))  
-    
-    # Scrape 5 pages for Top Deals & Price Drops
-    all_products.extend(scrape_category(URLS["Top Deals"], "Top Deals", PAGES_TO_SCRAPE))
-    all_products.extend(scrape_category(URLS["Price Drops"], "Price Drops", PAGES_TO_SCRAPE))
+    # Setup Selenium
+    driver = setup_selenium()
 
-    if all_products:
-        save_to_js(all_products)
-        print("🎉 Scraping and saving completed successfully.")
-    else:
-        print("⚠️ No products were saved. Check scraper or Amazon layout.")
+    # Scrape Bestsellers
+    all_products = scrape_bestsellers()
+
+    # Scrape Top Deals (Above 50% Discount)
+    all_products.extend(scrape_deals(driver, "Top Deals", URLS["TopDeals"], 50))
+
+    # Scrape Price Drops (Above 80% Discount)
+    all_products.extend(scrape_deals(driver, "Price Drops", URLS["PriceDrops"], 80))
+
+    # Close Selenium Driver
+    driver.quit()
+
+    # Save to products.js
+    save_to_js(all_products)
+    print("🎉 Scraping and saving completed successfully.")
