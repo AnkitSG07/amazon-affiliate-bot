@@ -48,6 +48,9 @@ def scrape_bestsellers():
         category_tag = item.find_previous("h2")
         category_text = category_tag.get_text(strip=True) if category_tag else "Miscellaneous"
 
+        # Initialize discount_percentage to avoid unbound error
+        discount_percentage = 0
+
         # Calculate old price and discount
         old_price, discount = "N/A", "0%"
         if price_text != "N/A":
@@ -63,7 +66,7 @@ def scrape_bestsellers():
 
         # Corrected product classification logic
         product_type = "Bestseller"
-        if discount_percentage >= 80 and discount_percentage <= 90:
+        if 80 <= discount_percentage <= 90:
             product_type = "Price Drops"  # Products with 80-90% off
         elif 45 <= discount_percentage <= 55:
             product_type = "Best Deals"  # Products with around 50% off
