@@ -19,9 +19,7 @@ AFFILIATE_TAG = "ankit007"
 # Setup Selenium with automatic ChromeDriver installation
 def setup_selenium():
     """Set up Selenium with ChromeDriver and headless mode."""
-    # Automatically install the correct version of ChromeDriver
-    chromedriver_autoinstaller.install()
-
+    chromedriver_autoinstaller.install()  # Automatically install the right version
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
@@ -78,27 +76,29 @@ def scrape_bestsellers():
     print(f"✅ Scraped {len(products)} Bestseller products.")
     return products
 
-# Scrape Top Deals and Price Drops using Selenium (Open Product Page)
+# Scrape Top Deals and Price Drops dynamically with Selenium
 def scrape_deals(url, category_name, discount_range):
-    """Scrapes Top Deals and Price Drops dynamically from deal pages."""
+    """Scrapes Top Deals and Price Drops dynamically by opening product pages."""
     driver = setup_selenium()
     driver.get(url)
-    time.sleep(5)  # Give page time to load
+    time.sleep(5)  # Allow time for the page to load
 
     products = []
-    items = driver.find_elements(By.CSS_SELECTOR, ".DesktopDiscountAsinGrid-module__grid_pi4xEmM7RAHNMG9sGVBJ > div")
+    items = driver.find_elements(By.CSS_SELECTOR,
+                                  ".DesktopDiscountAsinGrid-module__grid_pi4xEmM7RAHNMG9sGVBJ > div")
 
     for item in items:
         try:
-            # Extract link and open product page
+            # Find product link
             link = item.find_element(By.CSS_SELECTOR, "a.a-link-normal").get_attribute("href")
             if not link:
                 continue
 
-            driver.get(link)  # Open product page
+            # Open product page for more details
+            driver.get(link)
             time.sleep(3)
 
-            # Extract title, price, old price, and discount percentage
+            # Extract title, price, old price, and discount
             try:
                 title = driver.find_element(By.ID, "productTitle").text.strip()
             except:
@@ -127,7 +127,7 @@ def scrape_deals(url, category_name, discount_range):
             else:
                 discount_percentage = 0
 
-            # Categorize based on discount percentage
+            # Classify as Top Deal or Price Drop
             if discount_range[0] <= discount_percentage <= discount_range[1]:
                 product_type = category_name
                 product = {
