@@ -146,7 +146,7 @@ def scrape_deals(url, category_name, max_items=30):
 
     for item in items[:max_items]:  # Limit to max_items to avoid timeouts
         try:
-            link_element = item.find_element(By.CSS_SELECTOR, "a.a-link-normal")
+            link_element = item.find_element(By.TAG_NAME, "a")  # Fetch first <a> tag
             product_link = link_element.get_attribute("href")
 
             # Open product page to fetch price and details
