@@ -9,7 +9,7 @@ AMAZON_TOP_DEALS_URL = "https://www.amazon.in/deals"
 AMAZON_PRICE_DROPS_URL = "https://www.amazon.in/gp/goldbox?ref_=nav_cs_gb"
 
 AFFILIATE_TAG = "ankit007"
-PAGES_TO_SCRAPE = 5  # Scrape multiple pages to get more products
+PAGES_TO_SCRAPE = 50  # Scrape multiple pages to get more products
 
 # User agents to rotate (avoid getting blocked)
 USER_AGENTS = [
