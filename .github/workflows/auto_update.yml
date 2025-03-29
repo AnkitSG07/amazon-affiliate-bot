@@ -21,6 +21,7 @@ jobs:
     - name: Install Dependencies
       run: |
         pip install requests beautifulsoup4 selenium chromedriver-autoinstaller
+        pip install requests beautifulsoup4 selenium selenium-wire
 
     - name: Install Chrome
       run: |
