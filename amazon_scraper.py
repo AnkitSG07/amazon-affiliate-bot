@@ -5,6 +5,19 @@ from bs4 import BeautifulSoup
 AMAZON_BESTSELLER_URL = "https://www.amazon.in/gp/bestsellers"
 AFFILIATE_TAG = "ankit007"
 
+# Map Amazon categories to fixed category names
+CATEGORY_MAPPING = {
+    "Bestsellers in Sports, Fitness & Outdoors": "Bestsellers",
+    "Bestsellers in Computers & Accessories": "Bestsellers",
+    "Bestsellers in Car & Motorbike": "Bestsellers",
+    "Bestsellers in Home & Kitchen": "Bestsellers",
+    "Bestsellers in Musical Instruments": "Bestsellers",
+    "Bestsellers in Beauty": "Bestsellers",
+    "Bestsellers in Shoes & Handbags": "Bestsellers",
+    "Discounted Products": "Price Drop",
+    "Best Deals Products": "Best Deal"
+}
+
 def scrape_bestsellers():
     """Scrapes Amazon Bestsellers and returns a list of product dictionaries."""
     response = requests.get(AMAZON_BESTSELLER_URL, headers={'User-Agent': 'Mozilla/5.0'})
@@ -44,32 +57,30 @@ def scrape_bestsellers():
                  item.select_one("span.a-price > span.a-offscreen"))
         price_text = price.get_text(strip=True) if price else "N/A"
 
-        # Determine category or fallback to Miscellaneous
+        # Determine category and assign mapped name
         category_tag = item.find_previous("h2")
         category_text = category_tag.get_text(strip=True) if category_tag else "Miscellaneous"
-
-        # Initialize discount_percentage to avoid unbound error
-        discount_percentage = 0
+        category_mapped = CATEGORY_MAPPING.get(category_text, category_text)
 
         # Calculate old price and discount
-        old_price, discount = "N/A", "0%"
+        old_price, discount_percentage, product_type = "N/A", 0, "Bestseller"
         if price_text != "N/A":
             try:
                 price_number = int(price_text.replace('₹', '').replace(',', '').strip())
-                old_price_number = int(price_number * 100 / (100 - 50))  # Estimated original price
-                old_price = f"₹{old_price_number}"
+                old_price_number = price_number * 2  # Assume old price as double of current price
                 discount_percentage = round(((old_price_number - price_number) / old_price_number) * 100)
-                discount = f"{discount_percentage}%"
-            except ValueError:
-                price_number, old_price = "N/A", "N/A"
-                discount_percentage = 0
 
-        # Corrected product classification logic
-        product_type = "Bestseller"
-        if 80 <= discount_percentage <= 90:
-            product_type = "Price Drops"  # Products with 80-90% off
-        elif 45 <= discount_percentage <= 55:
-            product_type = "Best Deals"  # Products with around 50% off
+                # Assign product type based on discount
+                if 80 <= discount_percentage <= 90:
+                    product_type = "Price Drop"
+                elif 45 <= discount_percentage <= 55:  # Best Deal around 50%
+                    product_type = "Best Deal"
+                else:
+                    product_type = "Bestseller"
+                
+                old_price = f"₹{old_price_number}"
+            except ValueError:
+                price_number, discount_percentage, product_type = "N/A", 0, "Bestseller"
 
         # Add valid products
         if title and link and image_url:
@@ -78,7 +89,7 @@ def scrape_bestsellers():
                 'image': image_url,
                 'price': price_text,
                 'old_price': old_price,
-                'category': category_text,
+                'category': category_mapped,
                 'type': product_type,
                 'link': f"https://www.amazon.in{link['href']}&tag={AFFILIATE_TAG}"
             }
