@@ -65,21 +65,22 @@ def scrape_category(url, category_name, max_pages=1):
                 continue
 
             # Calculate old price and discount
-            old_price, discount_percentage = "N/A", "0%"
+            old_price, discount_percentage = "N/A", 0
             try:
                 if price_text != "N/A":
                     price_number = int(price_text.replace("₹", "").replace(",", "").strip())
                     old_price = f"₹{price_number * 2}"  # Double the price for old price
                     discount_percentage = round(((price_number * 2 - price_number) / (price_number * 2)) * 100)
-            except ValueError:
-                pass
+            except (ValueError, TypeError):
+                price_number, discount_percentage = "N/A", 0
 
             # Determine product type
             product_type = "Bestseller"
-            if discount_percentage >= 80 and discount_percentage <= 90:
-                product_type = "Price Drop"
-            elif discount_percentage >= 50 and discount_percentage < 80:
-                product_type = "Top Deals"
+            if isinstance(discount_percentage, (int, float)):
+                if discount_percentage >= 80 and discount_percentage <= 90:
+                    product_type = "Price Drops"
+                elif discount_percentage >= 50 and discount_percentage < 80:
+                    product_type = "Top Deals"
 
             # Create product dictionary
             product = {
