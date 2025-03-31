@@ -22,6 +22,7 @@ jobs:
       run: |
         pip install requests beautifulsoup4 selenium chromedriver-autoinstaller
         pip install requests beautifulsoup4 selenium selenium-wire
+        pip install blinker==1.7.0
 
     - name: Install Chrome
       run: |
